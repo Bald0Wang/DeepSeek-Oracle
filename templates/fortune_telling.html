@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>算命解析</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/2.1.3/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.11/jspdf.plugin.autotable.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fontsource/2.0.0/fontsource.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        
+        .navbar {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+        
+        .navbar a {
+            margin: 0 15px;
+            text-decoration: none;
+            color: #333;
+            padding: 8px 20px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .navbar a:hover {
+            background-color: #007bff;
+            color: white;
+        }
+        
+        .result-section {
+            background-color: white;
+            padding: 25px;
+            border-radius: 12px;
+            /* box-shadow: 0 2px 15px rgba(0,0,0,0.05); */
+            margin-bottom: 30px;
+        }
+        
+        .result-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            font-weight: 600;
+            padding-bottom: 10px;
+            position: relative;
+        }
+        
+        .result-section h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: #007bff;
+            /* border-radius: 2px; */
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .info-item {
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .info-item strong {
+            color: #007bff;
+        }
+        
+        .content {
+            line-height: 1.6;
+            color: #444;
+        }
+        
+        .loading {
+            padding: 15px;
+            color: #666;
+            font-style: italic;
+            text-align: center;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        .download-btn {
+            /* display: inline-block; */
+            padding: 12px 25px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .download-btn:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,123,255,0.2);
+        }
+
+        #executionTimeChart {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="loader" id="loader"></div>
+    <div class="container">
+        <h1 style="text-align: center; margin-bottom: 30px; color: #333;">算命解析</h1>
+        
+        <div class="navbar">
+            <a href="{{ url_for('marriage_path') }}">婚姻道路</a>
+            <a href="{{ url_for('challenges') }}">困难和挑战</a>
+            <a href="{{ url_for('partner_character') }}">另一半性格</a>
+        </div>
+        
+        <!-- 生辰八字信息 -->
+        <div class="result-section">
+            <h2>生辰八字信息</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <strong>日期:</strong> {{ date }}
+                </div>
+                <div class="info-item">
+                    <strong>时区:</strong> {{ timezone }}
+                </div>
+                <div class="info-item">
+                    <strong>性别:</strong> {{ gender }}
+                </div>
+                <div class="info-item">
+                    <strong>历法:</strong> {{ calendar }}
+                </div>
+            </div>
+            <pre>{{ text_description }}</pre>
+        </div>
+
+        <!-- 婚姻道路分析 -->
+        <div id="marriage_path" class="result-section">
+            <h2>婚姻道路分析</h2>
+            <div class="loading">正在分析中...</div>
+            <div class="content">
+                {{ fortune_results.marriage_path if fortune_results.marriage_path }}
+            </div>
+        </div>
+
+        <!-- 困难和挑战分析 -->
+        <div id="challenges" class="result-section">
+            <h2>困难和挑战分析</h2>
+            <div class="loading">正在分析中...</div>
+            <div class="content">
+                {{ fortune_results.challenges if fortune_results.challenges }}
+            </div>
+        </div>
+
+        <!-- 另一半性格分析 -->
+        <div id="partner_character" class="result-section">
+            <h2>另一半性格分析</h2>
+            <div class="loading">正在分析中...</div>
+            <div class="content">
+                {{ fortune_results.partner_character if fortune_results.partner_character }}
+            </div>
+        </div>
+
+        <!-- 推理耗时分析 -->
+        <div class="result-section">
+            <h2>推理耗时分析</h2>
+            <canvas id="executionTimeChart"></canvas>
+        </div>
+
+        <div style="text-align: center;">
+            <a href="{{ url_for('download_md') }}" class="download-btn">下载完整报告</a>
+        </div>
+    </div>
+
+    <script>
+        // 检查缓存中是否有结果
+        async function checkCache() {
+            const response = await fetch('/check_cache', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    date: '{{ date }}',
+                    timezone: '{{ timezone }}',
+                    gender: '{{ gender }}',
+                    calendar: '{{ calendar }}'
+                })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.cached_results) {
+                    updateResults(data.cached_results);
+                }
+            }
+        }
+
+        // 绘制推理耗时图表
+        function drawExecutionTimeChart(executionTimes) {
+            const ctx = document.getElementById('executionTimeChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(executionTimes),
+                    datasets: [{
+                        label: '推理耗时 (秒)',
+                        data: Object.values(executionTimes),
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.2)',
+                            'rgba(54, 162, 235, 0.2)',
+                            'rgba(75, 192, 192, 0.2)'
+                        ],
+                        borderColor: [
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(75, 192, 192, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '耗时 (秒)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '分析类型'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // 更新结果显示
+        function updateResults(results) {
+            Object.keys(results).forEach(type => {
+                const section = document.getElementById(type);
+                if (section) {
+                    const contentDiv = section.querySelector('.content');
+                    const loadingDiv = section.querySelector('.loading');
+                    
+                    contentDiv.innerHTML = marked(results[type]);
+                    loadingDiv.style.display = 'none';
+                }
+            });
+            document.getElementById('loader').style.display = 'none';
+
+            // 提取执行时间数据
+            const executionTimes = {};
+            Object.keys(results).forEach(type => {
+                const match = results[type].match(/推理耗时: (\d+\.\d+)秒/);
+                if (match) {
+                    executionTimes[type] = parseFloat(match[1]);
+                }
+            });
+
+            // 如果有执行时间数据，绘制图表
+            if (Object.keys(executionTimes).length > 0) {
+                drawExecutionTimeChart(executionTimes);
+            }
+        }
+
+        // 平滑滚动到锚点
+        document.querySelectorAll('.navbar a').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href').substring(1);
+                document.getElementById(targetId).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // 页面加载时检查缓存
+        document.addEventListener('DOMContentLoaded', () => {
+            checkCache();
+            // 显示加载动画
+            document.getElementById('loader').style.display = 'block';
+        });
+
+        // 页面加载时绘制图表
+        document.addEventListener('DOMContentLoaded', () => {
+            let executionTimes = {};
+            try {
+                executionTimes = {{ execution_times | tojson | safe }} || {};
+            } catch (e) {
+                console.error('Error parsing execution times:', e);
+            }
+            
+            if (Object.keys(executionTimes).length > 0) {
+                drawExecutionTimeChart(executionTimes);
+            }
+        });
+    </script>
+</body>
+</html> 

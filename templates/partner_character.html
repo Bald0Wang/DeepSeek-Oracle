@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>另一半性格和人品</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/2.1.3/marked.min.js"></script>
+    <style>
+        /* 加载条样式 */
+        .loader {
+            display: none; /* 默认隐藏 */
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 5px;
+            background: #000;
+            z-index: 1000;
+            animation: loading 2s infinite;
+        }
+        @keyframes loading {
+            0% { width: 0; }
+            50% { width: 100%; }
+            100% { width: 0; }
+        }
+        /* 导航栏样式 */
+        .navbar {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .navbar a {
+            margin-right: 15px;
+            text-decoration: none;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="loader" id="loader"></div>
+    <div class="container">
+        <h1>另一半性格和人品</h1>
+        <div class="navbar">
+            <a href="{{ url_for('fortune_telling', analysis_type='marriage_path') }}">选择婚姻道路</a>
+            <a href="{{ url_for('fortune_telling', analysis_type='challenges') }}">与另一半困难和挑战</a>
+            <a href="{{ url_for('fortune_telling', analysis_type='partner_character') }}">另一半性格和人品</a>
+            <a href="{{ url_for('fortune_telling') }}">姻缘总览</a>
+        </div>
+        <div class="content">
+            <div class="result-box">
+                <pre id="text-description">{{ text_description }}</pre>
+            </div>
+        </div>
+    </div>
+    <script>
+        // 显示加载条
+        document.getElementById('loader').style.display = 'block';
+        
+        // 将 Markdown 转换为 HTML
+        const fortuneResult = `{{ fortune_result | tojson | safe }}`.replace(/^"|"$/g, ''); // 去掉前后双引号
+        const fortuneResultDiv = document.getElementById('fortune-result');
+        
+        // 直接显示结果
+        function displayStreamedResult(result) {
+            fortuneResultDiv.innerHTML = marked(result); // 直接将结果转换为 HTML
+            document.getElementById('loader').style.display = 'none'; // 隐藏加载条
+        }
+
+        // 调用显示函数
+        displayStreamedResult(fortuneResult);
+    </script>
+</body>
+</html> 

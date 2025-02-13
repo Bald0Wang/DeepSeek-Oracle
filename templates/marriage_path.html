@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>婚姻道路分析</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/2.1.3/marked.min.js"></script>
+    <style>
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .navbar {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .navbar a {
+            margin-right: 20px;
+            text-decoration: none;
+            color: #007bff;
+            padding: 8px 15px;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        
+        .navbar a:hover {
+            background-color: #e9ecef;
+        }
+        
+        .result-section {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+        
+        .download-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        
+        .download-btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>婚姻道路分析</h1>
+        
+        <div class="navbar">
+            <a href="{{ url_for('marriage_path') }}">婚姻道路</a>
+            <a href="{{ url_for('challenges') }}">困难和挑战</a>
+            <a href="{{ url_for('partner_character') }}">另一半性格</a>
+        </div>
+        
+        <div class="result-section">
+            <h2>生辰八字信息</h2>
+            <p><strong>日期:</strong> {{ date }}</p>
+            <p><strong>时区:</strong> {{ timezone }}</p>
+            <p><strong>性别:</strong> {{ gender }}</p>
+            <p><strong>历法:</strong> {{ calendar }}</p>
+        </div>
+        
+        <div class="result-section">
+            <h2>分析结果</h2>
+            <div id="fortune-result"></div>
+        </div>
+        
+        <a href="{{ url_for('download_result', analysis_type='marriage_path') }}" class="download-btn">
+            下载分析报告
+        </a>
+    </div>
+
+    <script>
+        // 将 Markdown 转换为 HTML
+        const fortuneResult = `{{ fortune_result | tojson | safe }}`;
+        if (fortuneResult) {
+            document.getElementById('fortune-result').innerHTML = marked(fortuneResult.replace(/^"|"$/g, ''));
+        }
+    </script>
+</body>
+</html> 

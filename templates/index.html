@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>紫微斗数查询</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        /* 加载条样式 */
+        .loader {
+            display: none; /* 默认隐藏 */
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 5px;
+            background: #000;
+            z-index: 1000;
+            animation: loading 2s infinite;
+        }
+        @keyframes loading {
+            0% { width: 0; }
+            50% { width: 100%; }
+            100% { width: 0; }
+        }
+
+        /* 弹窗样式 */
+        .modal {
+            display: none; /* 默认隐藏 */
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4); /* 半透明背景 */
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto; /* 15% 从顶部 */
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%; /* 宽度 */
+            text-align: center; /* 居中 */
+            border-radius: 8px; /* 圆角 */
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="loader" id="loader"></div>
+    <div class="modal" id="myModal">
+        <div class="modal-content">
+            <span class="close" id="closeModal">&times;</span>
+            <p>小仙正在极速推算中，小主请稍等片刻。（预计3-5分钟可得到结果）</p>
+        </div>
+    </div>
+    <div class="container">
+        <h1>紫微斗数查询</h1>
+        <form method="POST" onsubmit="showLoader(); showModal();">
+            <label for="date">八字日期:</label>
+            <input type="date" id="date" name="date" required>
+            <br>
+            
+            <label for="timezone">时区:</label>
+            <select id="timezone" name="timezone" required>
+                {% for i in range(0, 13) %}
+                    <option value="{{ i }}">{{ i }}</option>
+                {% endfor %}
+            </select>
+            <br>
+            
+            <label for="gender">性别:</label>
+            <select id="gender" name="gender" required>
+                <option value="男">男</option>
+                <option value="女">女</option>
+            </select>
+            <br>
+
+            <label>历法选择:</label>
+            <input type="radio" id="solar" name="calendar" value="solar" checked>
+            <label for="solar">阳历</label>
+            <input type="radio" id="lunar" name="calendar" value="lunar">
+            <label for="lunar">阴历</label>
+            <br>
+            
+            <button type="submit">查询</button>
+        </form>
+
+        {% if text_description %}
+            <h2>查询结果:</h2>
+            <pre>{{ text_description }}</pre>
+        {% endif %}
+    </div>
+    <script>
+        function showLoader() {
+            document.getElementById('loader').style.display = 'block';
+        }
+
+        function showModal() {
+            document.getElementById('myModal').style.display = 'block';
+        }
+
+        // 关闭弹窗
+        document.getElementById('closeModal').onclick = function() {
+            document.getElementById('myModal').style.display = 'none';
+        }
+
+        // 点击窗口外部关闭弹窗
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('myModal')) {
+                document.getElementById('myModal').style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html> 
