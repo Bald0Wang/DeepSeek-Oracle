@@ -4,7 +4,7 @@ from llmana.glmapi import GLMClient
 from llmana.deepseek_ali_api import DeepSeekClient
 from json2ziwei.api import SolarAPI
 from json2ziwei.convert import convert_main_json_to_text
-from llmana.qwenmax_api import QwenMax2_5Client
+from llmana.deepseek_huoshan_api import deepseek_huoshan
 import os
 import threading
 import sqlite3
@@ -30,9 +30,9 @@ class StandardizedLLMClient:
         @constructor
         @description 初始化客户端，从环境变量读取配置
         """
-        self.api_key = os.getenv('DEEPSEEK_API_KEY')
-        self.base_url = os.getenv('DEEPSEEK_BASE_URL')
-        self.client = QwenMax2_5Client(self.api_key, self.base_url)
+        self.api_key = os.getenv('ARK_API_KEY')
+
+        self.client = deepseek_huoshan(self.api_key)
         self.tokenizer = initialize_tokenizer()  # 初始化 tokenizer
 
     def get_response(self, prompt):

@@ -114,6 +114,7 @@ http://localhost:5000
 
 ## 项目结构
 
+<pre>
 python_iztro/
 ├── app.py # Flask 主应用
 ├── requirements.txt # Python 依赖
@@ -128,7 +129,7 @@ python_iztro/
 ├── token_ana/ # Token 分析工具
 ├── templates/ # HTML 模板
 └── static/ # 静态资源
-
+</pre>
 
 ## 使用说明
 
