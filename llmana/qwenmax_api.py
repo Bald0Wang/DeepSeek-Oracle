@@ -32,11 +32,3 @@ class QwenMax2_5Client:
             # 捕获异常并返回错误消息
             return f"发生错误: {str(e)}"
 
-# if __name__ == "__main__":
-#     # 示例用法
-#     api_key = "sk-668e4e9df2ec46f0bd4ed35bb75522d0"
-#     base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-    
-#     deep_seek_client = DeepSeekClient(api_key, base_url)
-#     response_content = deep_seek_client.get_response("Hello")
-#     print(response_content)
