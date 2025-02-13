@@ -52,7 +52,7 @@ class deepseek_huoshan:
 
 if __name__ == "__main__":
     # 示例 API 密钥
-    api_key = "39e8806f-0e3d-46cc-b535-880ab3347a5e"
+    api_key = ""
     
     # 实例化 deepseek_huoshan 类
     deepseek = deepseek_huoshan(api_key)
