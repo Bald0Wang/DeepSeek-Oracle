@@ -12,6 +12,32 @@
 - Token 使用统计
 - Markdown 格式导出
 
+## 界面展示
+
+1. 进入系统后填写八字即可查询自己的姻缘相关分析。
+![alt text](./static/p1.png)
+
+2. 点击查询稍等一会就能得到结果。
+![alt text](./static/p2.png)
+
+3. 可以获取到的内容有生成八字及紫薇命盘。
+![alt text](./static/p3.png)
+
+4. 婚姻道路分析。
+![alt text](./static/p4.png)
+
+5. 与伴侣的困难和挑战。
+![alt text](./static/p5.png)
+
+6. 另一半的性格。
+![alt text](./static/p6.png)
+
+7. 查阅整体推理耗时情况。
+![alt text](./static/p7.jpg)
+
+8. 如果满意可以下载为md备用。
+![alt text](./static/p8.png)
+
 ## 环境要求
 
 ### Node.js 环境
@@ -83,9 +109,11 @@ node src/index.js
 
 http://localhost:5000
 
+
+
+
 ## 项目结构
 
-<pre>
 python_iztro/
 ├── app.py # Flask 主应用
 ├── requirements.txt # Python 依赖
@@ -100,7 +128,6 @@ python_iztro/
 ├── token_ana/ # Token 分析工具
 ├── templates/ # HTML 模板
 └── static/ # 静态资源
-</pre>
 
 
 ## 使用说明
