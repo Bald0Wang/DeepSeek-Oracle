@@ -6,22 +6,22 @@ from volcenginesdkarkruntime import Ark
 class deepseek_huoshan:
     def __init__(self, api_key):
         """初始化 DeepSeekClient 类
-        
+
         :param api_key: DeepSeek API 密钥
         :param base_url: API 的基础 URL
         """
         self.client = Ark(
         # 从环境变量中读取您的方舟API Key
-        api_key=api_key, 
+        api_key=api_key,
         # 深度推理模型耗费时间会较长，请您设置较大的超时时间，避免超时，推荐30分钟以上
         timeout=1800,
         # max_tokens = 8000
-        
+
         )
 
     def get_response(self, user_message):
         """发送用户消息并获取响应
-        
+
         :param user_message: 用户输入的消息
         :return: API 返回的响应内容或错误消息
         """
@@ -36,12 +36,12 @@ class deepseek_huoshan:
                     "content": user_message
                 }
             ]
-            
+
             # 打印将要发送的请求内容
             print("发送的消息:", messages)
-            
+
             response = self.client.chat.completions.create(
-                model="ep-XXXXXXX-XXX", # 这里请改为你自己的推理接入点 
+                model=os.getenv('ARK_MODEL'), # 这里请改为你自己的推理接入点
                 messages=messages
             )
             print(response.choices[0].message.content)
@@ -53,13 +53,13 @@ class deepseek_huoshan:
 if __name__ == "__main__":
     # 示例 API 密钥
     api_key = ""
-    
+
     # 实例化 deepseek_huoshan 类
     deepseek = deepseek_huoshan(api_key)
-    
+
     # 用户输入消息
     user_message = input("请输入您的消息: ")
-    
+
     # 获取响应并打印
     response = deepseek.get_response(user_message)
     print("API 响应:", response)
