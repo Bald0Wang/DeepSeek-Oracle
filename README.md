@@ -88,6 +88,7 @@ DEEPSEEK_API_KEY=your-api-key-here
 DEEPSEEK_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 ```
 
+注意：如果使用火山api请在llmana/deepseek_huoshan_api.py 修改推理接入点 
 
 
 ### 数据库配置

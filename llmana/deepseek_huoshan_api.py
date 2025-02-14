@@ -41,7 +41,7 @@ class deepseek_huoshan:
             print("发送的消息:", messages)
             
             response = self.client.chat.completions.create(
-                model="ep-20250213190617-wc82g",
+                model="ep-XXXXXXX-XXX", # 这里请改为你自己的推理接入点 
                 messages=messages
             )
             print(response.choices[0].message.content)
