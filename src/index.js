@@ -14,7 +14,7 @@ app.post("/api/astro/solar", (req, res) => {
     const { date, timezone, gender } = req.body;
 
     // 检查请求参数
-    if (!date || !timezone || !gender) {
+    if (!date  || !gender) {
         return res.status(400).json({ error: "缺少必要的参数" });
     }
 
@@ -32,7 +32,7 @@ app.post("/api/astro/lunar", (req, res) => {
     const { date, timezone, gender } = req.body;
 
     // 检查请求参数
-    if (!date || !timezone || !gender) {
+    if (!date  || !gender) {
         return res.status(400).json({ error: "缺少必要的参数" });
     }
 
