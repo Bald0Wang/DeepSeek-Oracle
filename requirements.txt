@@ -3,3 +3,6 @@ Flask-CORS==4.0.0
 python-dotenv==1.0.0
 transformers==4.35.2
 requests==2.31.0
+zhipuai==2.1.5.20250106
+volcengine-python-sdk==1.0.124
+openai==1.63.0
