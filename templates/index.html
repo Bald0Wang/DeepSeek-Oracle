@@ -74,10 +74,38 @@
             <input type="date" id="date" name="date" required>
             <br>
             
-            <label for="timezone">时区:</label>
+            <label for="timezone">生辰时间:</label>
             <select id="timezone" name="timezone" required>
                 {% for i in range(0, 13) %}
-                    <option value="{{ i }}">{{ i }}</option>
+                {% set time_name = "" %}
+                {% if i == 0 %}
+                {% set time_name = "早子时 (0:00-1:00)" %}
+                {% elif i == 1 %}
+                {% set time_name = "丑时 (1:00-3:00)" %}
+                {% elif i == 2 %}
+                {% set time_name = "寅时 (3:00-5:00)" %}
+                {% elif i == 3 %}
+                {% set time_name = "卯时 (5:00-7:00)" %}
+                {% elif i == 4 %}
+                {% set time_name = "辰时 (7:00-9:00)" %}
+                {% elif i == 5 %}
+                {% set time_name = "巳时 (9:00-11:00)" %}
+                {% elif i == 6 %}
+                {% set time_name = "午时 (11:00-13:00)" %}
+                {% elif i == 7 %}
+                {% set time_name = "未时 (13:00-15:00)" %}
+                {% elif i == 8 %}
+                {% set time_name = "申时 (15:00-17:00)" %}
+                {% elif i == 9 %}
+                {% set time_name = "酉时 (17:00-19:00)" %}
+                {% elif i == 10 %}
+                {% set time_name = "戌时 (19:00-21:00)" %}
+                {% elif i == 11 %}
+                {% set time_name = "亥时 (21:00-23:00)" %}
+                {% elif i == 12 %}
+                {% set time_name = "晚子时 (23:00-24:00)" %}
+                {% endif %}
+                <option value="{{ i }}">{{ time_name }}</option>
                 {% endfor %}
             </select>
             <br>
