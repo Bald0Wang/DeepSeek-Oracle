@@ -20,28 +20,34 @@ v0.0.1 正值情人节发布姻缘版~
 ### bilibili视频展示：
 [【情人节到了，来用DeepSeek算算命里的那个ta】](https://www.bilibili.com/video/BV1M4KPeYEUd/?share_source=copy_web&amp;vd_source=61a460664b149ef3561e7fc98974fc81)
 
+### 安装教程！：
+[【DeepSeek-Oracle项目启动教程】不会Deepseek算姻缘？来手把手教你
+](https://www.bilibili.com/video/BV1igAKe3Eqa)
+
+
+
 1. 进入系统后填写八字即可查询自己的姻缘相关分析。
 ![alt text](./static/p1.png)
 
-2. 点击查询稍等一会就能得到结果。
+1. 点击查询稍等一会就能得到结果。
 ![alt text](./static/p2.png)
 
-3. 可以获取到的内容有生成八字及紫薇命盘。
+1. 可以获取到的内容有生成八字及紫薇命盘。
 ![alt text](./static/p3.png)
 
-4. 婚姻道路分析。
+1. 婚姻道路分析。
 ![alt text](./static/p4.png)
 
-5. 与伴侣的困难和挑战。
+1. 与伴侣的困难和挑战。
 ![alt text](./static/p5.png)
 
-6. 另一半的性格。
+1. 另一半的性格。
 ![alt text](./static/p6.png)
 
-7. 查阅整体推理耗时情况。
+1. 查阅整体推理耗时情况。
 ![alt text](./static/p7.jpg)
 
-8. 如果满意可以下载为md备用。
+1. 如果满意可以下载为md备用。
 ![alt text](./static/p8.png)
 
 ## 环境要求
@@ -61,6 +67,7 @@ v0.0.1 正值情人节发布姻缘版~
 
 
 ```bash
+cd src
 pnpm add -S iztro express
 ```
 
@@ -68,6 +75,10 @@ pnpm add -S iztro express
 
 
 2. 安装 Python 依赖
+conda create -n DeepSeek-Oracle python=3.12
+conda activate DeepSeek-Oracle
+
+pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 
 ### 主要 Python 依赖
@@ -89,7 +100,9 @@ DEEPSEEK_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 ```
 
 注意：如果使用火山api请在llmana/deepseek_huoshan_api.py 修改推理接入点 
-
+https://www.volcengine.com/ api入口~
+api key 申请入口：https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey?apikey=%7B%7D
+api 推理点申请入口：https://console.volcengine.com/ark/region:ark+cn-beijing/endpoint?config=%7B%7D
 
 ### 数据库配置
 项目使用 SQLite 数据库，首次运行时会自动创建 `data.db` 文件。

@@ -39,9 +39,9 @@ class deepseek_huoshan:
             
             # 打印将要发送的请求内容
             print("发送的消息:", messages)
-            
+            ark_model = os.getenv('ARK_API_model')
             response = self.client.chat.completions.create(
-                model="ep-XXXXXXX-XXX", # 这里请改为你自己的推理接入点 
+                model=ark_model, # 这里请改为你自己的推理接入点 
                 messages=messages
             )
             print(response.choices[0].message.content)

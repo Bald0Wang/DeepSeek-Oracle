@@ -222,7 +222,7 @@ def fortune_telling():
         markdown_content += f"- Token 数量: {token_count}\n"
         markdown_content += f"\n{response}\n\n"
     
-    with open("fortune_result.md", "w", encoding="utf-8") as f:
+    with open(f"fortune_result_{session.get('date')}_{session.get('timezone')}.md", "w", encoding="utf-8") as f:
         f.write(markdown_content)
 
     # 将结果存储到 SQLite 数据库

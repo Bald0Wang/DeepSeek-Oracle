@@ -1,28 +1,24 @@
-# pip3 install transformers
-# python3 deepseek_tokenizer.py
-import transformers
+# pip3 install jieba
+import jieba
 
-def initialize_tokenizer(model_name="deepseek-ai/deepseek-llm-7b-chat"):
+def initialize_tokenizer(model_name=None):
     """
     @function initialize_tokenizer
-    @description 初始化 tokenizer
-    @param {str} model_name - 模型名称或路径，默认为 DeepSeek 官方模型
-    @returns {transformers.PreTrainedTokenizer} - 初始化后的 tokenizer
+    @description 初始化 tokenizer (使用 jieba)
+    @param {str} model_name - 模型名称或路径 (未使用)
+    @returns {jieba} - 初始化后的 jieba 分词器
     """
-    return transformers.AutoTokenizer.from_pretrained(
-        model_name, 
-        trust_remote_code=True
-    )
+    return jieba  # jieba 本身就是分词器
 
 def encode_text(text, tokenizer):
     """
     @function encode_text
-    @description 对文本进行编码
+    @description 对文本进行编码 (使用 jieba 分词)
     @param {str} text - 要编码的文本
-    @param {transformers.PreTrainedTokenizer} tokenizer - 用于编码的 tokenizer
+    @param {jieba} tokenizer - 用于编码的 jieba 分词器
     @returns {list} - 编码后的 token 列表
     """
-    return tokenizer.encode(text)
+    return list(tokenizer.cut(text)) # jieba.cut 返回的是一个生成器，需要转换为 list
 
 def main():
     """
@@ -31,10 +27,10 @@ def main():
     """
     # 初始化 tokenizer
     tokenizer = initialize_tokenizer()
-    
+
     # 编码示例文本
-    encoded_text = encode_text("Hello!", tokenizer)
-    
+    encoded_text = encode_text("你好世界！", tokenizer) # 使用中文示例
+
     # 打印结果
     print(encoded_text)
 
