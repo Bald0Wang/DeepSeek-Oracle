@@ -264,7 +264,7 @@ def generate_markdown(fortune_result):
 
 @app.route('/download_md')
 def download_md():
-    return send_file("fortune_result.md", as_attachment=True)
+    return send_file(f"fortune_result_{session.get('date')}_{session.get('timezone')}.md", as_attachment=True)
 
 def query_database(query):
     """查询数据库并返回结果"""

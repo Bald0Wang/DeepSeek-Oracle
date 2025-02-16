@@ -11,6 +11,8 @@ ENV/
 # SQLite database
 *.db
 
+node_modules/
+
 # Logs
 *.log
 
