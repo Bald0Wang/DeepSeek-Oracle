@@ -21,15 +21,6 @@ const STEP_LABELS: Record<string, string> = {
   done: "推演完成",
 };
 
-const FORTUNES = [
-  "天机星正在为你排列星辰…",
-  "紫微帝座光芒渐显…",
-  "命盘十二宫位逐一点亮…",
-  "大语言模型正在深度推演…",
-  "星曜交会，命运脉络渐清…",
-  "天相星化吉，前途渐明…",
-];
-
 
 export default function LoadingPage() {
   const { taskId = "" } = useParams();
@@ -39,7 +30,6 @@ export default function LoadingPage() {
 
   const [taskData, setTaskData] = useState<TaskData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [fortuneIdx, setFortuneIdx] = useState(0);
 
   const canRetry = useMemo(() => taskData?.status === "failed", [taskData?.status]);
   const canCancel = useMemo(
@@ -47,13 +37,7 @@ export default function LoadingPage() {
     [taskData?.status]
   );
 
-  // Rotate fortune text
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setFortuneIdx((prev) => (prev + 1) % FORTUNES.length);
-    }, 4000);
-    return () => clearInterval(timer);
-  }, []);
+  const reusedTask = Boolean((location.state as { reusedTask?: boolean } | null)?.reusedTask);
 
   useEffect(() => {
     if (!taskId) {
@@ -77,7 +61,9 @@ export default function LoadingPage() {
     const run = async () => {
       try {
         const data = await pollTask(taskId);
-        if (!active) return;
+        if (!active) {
+          return;
+        }
 
         setTaskData(data);
         setError(null);
@@ -88,9 +74,13 @@ export default function LoadingPage() {
           return;
         }
 
-        if (TERMINAL_STATUS.has(data.status)) return;
+        if (TERMINAL_STATUS.has(data.status)) {
+          return;
+        }
       } catch (err) {
-        if (!active) return;
+        if (!active) {
+          return;
+        }
         setError(err instanceof Error ? err.message : "轮询失败");
       }
 
@@ -101,12 +91,16 @@ export default function LoadingPage() {
 
     return () => {
       active = false;
-      if (timer) window.clearTimeout(timer);
+      if (timer) {
+        window.clearTimeout(timer);
+      }
     };
   }, [navigate, pollTask, taskId]);
 
   const onRetry = async () => {
-    if (!taskId) return;
+    if (!taskId) {
+      return;
+    }
     await retry(taskId);
     setTaskData((prev) =>
       prev ? { ...prev, status: "queued", progress: 0, error: null } : prev
@@ -114,7 +108,9 @@ export default function LoadingPage() {
   };
 
   const onCancel = async () => {
-    if (!taskId) return;
+    if (!taskId) {
+      return;
+    }
     await cancel(taskId);
     setTaskData((prev) => (prev ? { ...prev, status: "cancelled" } : prev));
   };
@@ -124,65 +120,34 @@ export default function LoadingPage() {
 
   return (
     <div className="fade-in">
-      <InkCard title="天机推演中" icon="☯">
+      <InkCard title="天演推演中">
         <div className="loading-container">
           <LoadingAnimation size="large" />
+          <p className="loading-title">正在解析星曜轨迹</p>
 
-          {/* Fortune text */}
-          <p style={{ fontSize: 15, color: "var(--text-soft)", marginBottom: 20, minHeight: 24 }}>
-            {FORTUNES[fortuneIdx]}
-          </p>
-
-          {/* Progress bar */}
-          <div className="progress-bar">
+          <div className="progress-bar" aria-label="分析进度">
             <div className="progress-bar__fill" style={{ width: `${progress}%` }} />
           </div>
-
-          <p style={{ fontSize: 24, fontWeight: 700, marginTop: 12 }}>{progress}%</p>
+          <p className="loading-percent">{progress}%</p>
 
           <div className="step-info">
-            <span className="step-info__label">当前步骤：</span>
+            <span className="step-info__label">当前步骤:</span>
             {stepLabel}
           </div>
 
-            <p className="step-info" style={{ marginTop: 4 }}>
-              任务 ID：{taskId}
-            </p>
+          <p className="task-chip">任务 ID: {taskId}</p>
 
-            {location.state && (location.state as { reusedTask?: boolean }).reusedTask && (
-              <p className="step-info" style={{ marginTop: 4 }}>
-                检测到相同命盘任务，已复用正在执行的推演进程。
-              </p>
-            )}
+          {reusedTask && <p className="step-info">检测到相同命盘输入，已复用进行中的分析任务。</p>}
 
-          {/* Placeholder image */}
-          <div
-            className="placeholder-image placeholder-image--md"
-            style={{ maxWidth: 320, marginTop: 24 }}
-          >
-            <div className="placeholder-image__icon">🌌</div>
-            <div className="placeholder-image__text">星盘推演动画</div>
-          </div>
+          {taskData?.error && <p className="error-text">{taskData.error.message}</p>}
+          {error && <p className="error-text">{error}</p>}
 
-          {taskData?.error && (
-            <p className="error-text" style={{ marginTop: 16 }}>
-              {taskData.error.message}
-            </p>
-          )}
-          {error && (
-            <p className="error-text" style={{ marginTop: 16 }}>
-              {error}
-            </p>
-          )}
+          {taskData?.status === "cancelled" && <p className="loading-state-text">任务已取消</p>}
 
-          {taskData?.status === "cancelled" && (
-            <p style={{ color: "var(--text-muted)", marginTop: 16 }}>任务已取消</p>
-          )}
-
-          <div className="actions-row" style={{ justifyContent: "center", marginTop: 20 }}>
+          <div className="actions-row actions-row--center">
             {canRetry && (
               <InkButton type="button" onClick={onRetry}>
-                重试推演
+                重试分析
               </InkButton>
             )}
             {canCancel && (

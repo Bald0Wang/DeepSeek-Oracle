@@ -9,10 +9,10 @@ import { MarkdownRenderer } from "../components/MarkdownRenderer";
 import type { AnalysisDetailItem } from "../types";
 
 
-const ANALYSIS_LABEL: Record<string, { label: string; icon: string }> = {
-  marriage_path: { label: "婚姻道路", icon: "💍" },
-  challenges: { label: "困难挑战", icon: "⚡" },
-  partner_character: { label: "伴侣性格", icon: "🤝" },
+const ANALYSIS_LABEL: Record<string, string> = {
+  marriage_path: "婚姻道路",
+  challenges: "困难挑战",
+  partner_character: "伴侣性格",
 };
 
 
@@ -27,11 +27,16 @@ export default function DetailPage() {
       : null;
 
   useEffect(() => {
-    if (!id || !analysisType) return;
+    if (!id || !analysisType) {
+      return;
+    }
+
     (async () => {
       try {
         const response = await getResultItem(Number(id), analysisType);
-        if (!response.data) throw new Error("detail not found");
+        if (!response.data) {
+          throw new Error("detail not found");
+        }
         setItem(response.data);
       } catch (err) {
         setError(err instanceof Error ? err.message : "获取详情失败");
@@ -39,10 +44,12 @@ export default function DetailPage() {
     })();
   }, [analysisType, id]);
 
-  const config = ANALYSIS_LABEL[analysisType || ""] || { label: type, icon: "📋" };
+  const title = ANALYSIS_LABEL[analysisType || ""] || type;
 
   const onDownload = async () => {
-    if (!id || !analysisType) return;
+    if (!id || !analysisType) {
+      return;
+    }
     const response = await exportReport(Number(id), analysisType);
     const blob = new Blob([response.data], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
@@ -57,7 +64,7 @@ export default function DetailPage() {
 
   if (error) {
     return (
-      <InkCard title="详情读取失败" icon="⚠">
+      <InkCard title="详情读取失败">
         <p className="error-text">{error}</p>
       </InkCard>
     );
@@ -65,7 +72,7 @@ export default function DetailPage() {
 
   if (!analysisType) {
     return (
-      <InkCard title="详情读取失败" icon="⚠">
+      <InkCard title="详情读取失败">
         <p className="error-text">无效的分析类型</p>
       </InkCard>
     );
@@ -73,9 +80,9 @@ export default function DetailPage() {
 
   if (!item) {
     return (
-      <div className="loading-container" style={{ paddingTop: 80 }}>
+      <div className="loading-container loading-container--page">
         <LoadingAnimation size="large" />
-        <p style={{ color: "var(--text-muted)", marginTop: 16 }}>正在加载分析详情…</p>
+        <p className="loading-state-text">正在加载分析详情...</p>
       </div>
     );
   }
@@ -83,12 +90,11 @@ export default function DetailPage() {
   return (
     <div className="fade-in">
       <Link to={`/result/${id}`} className="back-link">
-        ← 返回总览
+        返回总览
       </Link>
 
-      <InkCard title={config.label} icon={config.icon}>
-        {/* Stats */}
-        <div className="meta-grid" style={{ marginBottom: 20 }}>
+      <InkCard title={title}>
+        <div className="meta-grid meta-grid--compact">
           <div className="meta-item">
             <div className="meta-item__label">分析耗时</div>
             <div className="meta-item__value">{item.execution_time.toFixed(1)}s</div>
@@ -107,15 +113,8 @@ export default function DetailPage() {
           </div>
         </div>
 
-        {/* Placeholder image */}
-        <div className="placeholder-image placeholder-image--md" style={{ marginBottom: 20 }}>
-          <div className="placeholder-image__icon">{config.icon}</div>
-          <div className="placeholder-image__text">{config.label}详情配图</div>
-        </div>
-
         <hr className="ink-divider" />
 
-        {/* Content */}
         <div className="markdown-body">
           <MarkdownRenderer content={item.content} />
         </div>
