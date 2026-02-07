@@ -9,15 +9,17 @@ interface InkCardProps extends PropsWithChildren {
 
 
 export function InkCard({ title, icon, children, className = "" }: InkCardProps) {
+  const cardClassName = ["ink-card", className].filter(Boolean).join(" ");
+
   return (
-    <section className={`ink-card ${className}`}>
-      <div className="ink-card__corner ink-card__corner--tl" />
-      <div className="ink-card__corner ink-card__corner--br" />
+    <section className={cardClassName}>
       {title ? (
-        <h3 className="ink-card__title">
-          {icon && <span className="ink-card__title-icon">{icon}</span>}
-          {title}
-        </h3>
+        <header className="ink-card__header">
+          <h3 className="ink-card__title">
+            {icon && <span className="ink-card__title-icon">{icon}</span>}
+            {title}
+          </h3>
+        </header>
       ) : null}
       <div className="ink-card__content">{children}</div>
     </section>

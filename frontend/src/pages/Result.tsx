@@ -9,21 +9,18 @@ import { LoadingAnimation } from "../components/LoadingAnimation";
 import type { AnalysisResult } from "../types";
 
 
-const ANALYSIS_CONFIG: Record<string, { label: string; icon: string; desc: string }> = {
+const ANALYSIS_CONFIG: Record<string, { label: string; desc: string }> = {
   marriage_path: {
     label: "婚姻道路",
-    icon: "💍",
-    desc: "解读夫妻宫星曜，分析感情走向与婚姻运势",
+    desc: "解读夫妻宫星曜关系，分析感情走向与关键阶段。",
   },
   challenges: {
     label: "困难挑战",
-    icon: "⚡",
-    desc: "洞察人生波折，提供紫微斗数视角的应对之策",
+    desc: "识别常见阻力来源，提供更务实的应对建议。",
   },
   partner_character: {
     label: "伴侣性格",
-    icon: "🤝",
-    desc: "推演另一半的性格特质与相处模式",
+    desc: "分析伴侣可能的性格倾向与相处节奏。",
   },
 };
 
@@ -34,11 +31,16 @@ export default function ResultPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id) {
+      return;
+    }
+
     (async () => {
       try {
         const response = await getResult(Number(id));
-        if (!response.data) throw new Error("result not found");
+        if (!response.data) {
+          throw new Error("result not found");
+        }
         setResult(response.data);
       } catch (err) {
         setError(err instanceof Error ? err.message : "获取结果失败");
@@ -47,7 +49,9 @@ export default function ResultPage() {
   }, [id]);
 
   const download = async (scope: string) => {
-    if (!id) return;
+    if (!id) {
+      return;
+    }
     const response = await exportReport(Number(id), scope);
     const blob = new Blob([response.data], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
@@ -62,7 +66,7 @@ export default function ResultPage() {
 
   if (error) {
     return (
-      <InkCard title="结果读取失败" icon="⚠">
+      <InkCard title="结果读取失败">
         <p className="error-text">{error}</p>
       </InkCard>
     );
@@ -70,9 +74,9 @@ export default function ResultPage() {
 
   if (!result) {
     return (
-      <div className="loading-container" style={{ paddingTop: 80 }}>
+      <div className="loading-container loading-container--page">
         <LoadingAnimation size="large" />
-        <p style={{ color: "var(--text-muted)", marginTop: 16 }}>正在加载命盘结果…</p>
+        <p className="loading-state-text">正在加载分析结果...</p>
       </div>
     );
   }
@@ -81,8 +85,7 @@ export default function ResultPage() {
 
   return (
     <div className="fade-in">
-      {/* Overview Card */}
-      <InkCard title="命盘结果总览" icon="📜">
+      <InkCard title="命盘总览">
         <div className="meta-grid">
           <div className="meta-item">
             <div className="meta-item__label">出生日期</div>
@@ -118,40 +121,29 @@ export default function ResultPage() {
           </div>
         </div>
 
-        {/* Star Chart Description */}
         {result.text_description && (
           <>
             <hr className="ink-divider" />
             <details>
-              <summary
-                style={{
-                  cursor: "pointer",
-                  fontWeight: 600,
-                  fontSize: 14,
-                  color: "var(--text-soft)",
-                  marginBottom: 8,
-                }}
-              >
-                展开命盘描述
-              </summary>
+              <summary className="details-toggle">展开命盘描述</summary>
               <div className="pre-wrap">{result.text_description}</div>
             </details>
           </>
         )}
 
-        <div className="actions-row" style={{ marginTop: 16 }}>
+        <div className="actions-row">
           <InkButton type="button" onClick={() => download("full")}>
             下载完整报告
           </InkButton>
           <Link to="/history">
             <InkButton type="button" kind="ghost">
-              查看历史
+              查看历史记录
             </InkButton>
           </Link>
         </div>
       </InkCard>
 
-      <InkCard title="推理耗时分析" icon="⏱">
+      <InkCard title="推理耗时分布">
         <ExecutionTimeChart
           rows={Object.entries(result.analysis).map(([analysisType, item]) => ({
             key: analysisType,
@@ -161,53 +153,37 @@ export default function ResultPage() {
         />
       </InkCard>
 
-      {/* Analysis Cards */}
       {Object.entries(result.analysis).map(([analysisType, item], idx) => {
         const config = ANALYSIS_CONFIG[analysisType] || {
           label: analysisType,
-          icon: "📋",
           desc: "",
         };
+
         return (
-          <div
+          <section
             key={analysisType}
-            className={`analysis-card fade-in-up fade-in-delay-${idx + 1}`}
-            style={{ marginTop: 20 }}
+            className="analysis-card fade-in-up"
+            style={{ animationDelay: `${(idx + 1) * 0.06}s` }}
           >
             <div className="analysis-card__header">
-              <div className="analysis-card__title">
-                <span className="analysis-card__icon">{config.icon}</span>
-                {config.label}
-              </div>
+              <h2 className="analysis-card__title">{config.label}</h2>
               <div className="analysis-card__stats">
-                <span className="analysis-card__stat">⏱ {item.execution_time.toFixed(1)}s</span>
-                <span className="analysis-card__stat">📊 {item.token_count.toLocaleString()} token</span>
+                <span className="analysis-card__stat">{item.execution_time.toFixed(1)}s</span>
+                <span className="analysis-card__stat">{item.token_count.toLocaleString()} tokens</span>
               </div>
             </div>
 
-            {config.desc && (
-              <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }}>
-                {config.desc}
-              </p>
-            )}
-
-            {/* Placeholder image */}
-            <div className="placeholder-image placeholder-image--sm" style={{ marginBottom: 12 }}>
-              <div className="placeholder-image__icon">{config.icon}</div>
-              <div className="placeholder-image__text">{config.label}配图</div>
-            </div>
+            {config.desc && <p className="analysis-card__summary">{config.desc}</p>}
 
             <div className="analysis-card__actions">
               <Link to={`/result/${id}/${analysisType}`}>
-                <InkButton type="button" kind="primary">
-                  查看详情
-                </InkButton>
+                <InkButton type="button">查看详情</InkButton>
               </Link>
               <InkButton type="button" kind="ghost" onClick={() => download(analysisType)}>
                 下载此分析
               </InkButton>
             </div>
-          </div>
+          </section>
         );
       })}
     </div>
