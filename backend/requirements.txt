@@ -1,0 +1,10 @@
+Flask==2.3.2
+Flask-CORS==4.0.0
+python-dotenv==1.0.0
+requests==2.31.0
+openai
+zhipuai
+volcengine-python-sdk[ark]
+jieba
+redis
+rq
