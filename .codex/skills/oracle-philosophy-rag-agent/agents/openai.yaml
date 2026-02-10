@@ -1,0 +1,4 @@
+interface:
+  display_name: "Oracle Philosophy RAG Agent"
+  short_description: "Turn RAG classics into practical mindset guidance"
+  default_prompt: "Use $oracle-philosophy-rag-agent to turn retrieved classics into practical mindset guidance."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Oracle MeiHua Agent"
+  short_description: "Generate short-term MeiHua event guidance and mitigations"
+  default_prompt: "Use $oracle-meihua-agent to analyze this short-term event and suggest practical responses."

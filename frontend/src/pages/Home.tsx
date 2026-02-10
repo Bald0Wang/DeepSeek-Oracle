@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { InkButton } from "../components/InkButton";
 import { useAnalysis } from "../hooks/useAnalysis";
@@ -132,6 +132,11 @@ export default function HomePage() {
   return (
     <div className="home-search fade-in">
       <form className="home-search__form fade-in-up" onSubmit={onSubmit}>
+        <div className="home-search__intro">
+          <p className="home-search__title">东方命盘分析入口</p>
+          <p className="home-search__desc">用于生成紫微命盘与三类专项解读；若你想直接提问近期问题，请使用咨询对话。</p>
+        </div>
+
         <div className="home-search__row">
           <input
             className="home-search__input"
@@ -146,7 +151,15 @@ export default function HomePage() {
           </InkButton>
         </div>
 
-        <p className="home-search__hint">格式：{INPUT_FORMAT_HINT}</p>
+        <div className="home-search__meta">
+          <p className="home-search__hint">格式：{INPUT_FORMAT_HINT}</p>
+          <Link to="/oracle" className="home-search__quick-link">转到咨询对话</Link>
+        </div>
+
+        <div className="home-search__tips" aria-label="输入建议">
+          <span className="home-search__tip-chip">先做长期命盘，再做短期追问</span>
+          <span className="home-search__tip-chip">不确定时辰可先去咨询对话模块</span>
+        </div>
 
         {(localError || error) && <p className="error-text home-search__error">{localError || error}</p>}
       </form>

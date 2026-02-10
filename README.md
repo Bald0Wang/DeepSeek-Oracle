@@ -8,15 +8,40 @@
 
 - `backend/`：Flask API + Redis + RQ Worker（异步任务）
 - `frontend/`：React + Vite + TypeScript（独立前端）
-- `backend/iztro_service/`：Node 星盘服务（后端内部依赖）
+- `izthon/`：Python 星盘计算库（后端直接调用，不再依赖 Node 星盘 API）
 
 ## 主要能力
 
 - 阳历/阴历命盘生成
 - 异步分析任务（提交、轮询、重试、取消）
 - 三类分析：婚姻道路、困难挑战、伴侣性格
+- 多智能体咨询编排（安全审查 + 长短线路由 + 统一答复）
 - 历史记录查询与 Markdown 报告导出
 - 缓存命中与任务复用（避免重复推演）
+
+## 新增接口（多智能体咨询）
+
+- `POST /api/oracle/chat`
+
+请求体示例：
+
+```json
+{
+  "user_query": "我最近想换工作，想看未来半年走势和本周行动",
+  "selected_school": "east",
+  "enabled_schools": ["ziwei", "meihua", "actionizer", "philosophy"],
+  "user_profile_summary": "互联网从业者，近期压力较大",
+  "conversation_history_summary": "过去两次咨询都围绕职业决策"
+}
+```
+
+返回结构：
+
+- `answer_text`
+- `follow_up_questions`
+- `action_items`
+- `safety_disclaimer_level`
+- `trace`
 
 ## 环境要求
 
@@ -38,6 +63,7 @@ redis-server
 cd backend
 py -3 -m pip install -r requirements.txt
 copy .env.example .env
+# 如未安装 izthon，可在 .env 中设置 IZTHON_SRC_PATH 指向本地 izthon/src
 py -3 run.py
 ```
 
@@ -48,15 +74,7 @@ cd backend
 py -3 worker.py
 ```
 
-4) 启动 iztro 服务
-
-```bash
-cd backend/iztro_service
-npm install
-npm start
-```
-
-5) 启动前端
+4) 启动前端
 
 ```bash
 cd frontend
@@ -65,6 +83,54 @@ npm run dev
 ```
 
 前端默认地址：`http://localhost:5173`
+
+## Docker 一键启动
+
+项目已提供完整容器编排：`frontend + backend + worker + redis`。
+
+1) 准备 Docker 环境变量
+
+```bash
+cp .env.docker.example .env.docker
+```
+
+关键变量：
+
+- `IZTHON_SRC_PATH_HOST`：本地 `izthon/src` 路径（紫微计算依赖，默认 `../izthon/src`）
+- `FRONTEND_PORT`：前端端口，默认 `8080`
+- `BACKEND_PORT`：后端端口，默认 `5000`
+- `LLM_PROVIDER`：默认 `mock`
+
+2) 启动服务
+
+```bash
+docker compose --env-file .env.docker up -d --build
+```
+
+3) 访问与检查
+
+- 前端：`http://localhost:8080`
+- 后端健康检查：`http://localhost:5000/healthz`
+- 查看日志：`docker compose logs -f`
+
+4) 停止服务
+
+```bash
+docker compose --env-file .env.docker down
+```
+
+## 开发辅助 Subagent（安全审查）
+
+已新增一个开发后安全审查 subagent：
+
+- 路径：`.codex/skills/post-dev-security-review/`
+- 主配置：`.codex/skills/post-dev-security-review/SKILL.md`
+- 检查清单：`.codex/skills/post-dev-security-review/references/deepseek-oracle-security-checklist.md`
+
+建议在每次功能开发完成后使用类似请求触发：
+
+- `请用 post-dev-security-review 对这次改动做安全审查`
+- `请基于最近 git diff 给出安全问题和优化建议`
 
 ## 旧数据迁移（可选）
 
@@ -80,7 +146,6 @@ py -3 backend/scripts/migrate_legacy_results.py --legacy-db data.db --new-db bac
 DeepSeek-Oracle/
 ├── backend/
 │   ├── app/
-│   ├── iztro_service/
 │   ├── migrations/
 │   ├── scripts/
 │   ├── run.py

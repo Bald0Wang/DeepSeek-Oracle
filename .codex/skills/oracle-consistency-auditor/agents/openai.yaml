@@ -1,0 +1,4 @@
+interface:
+  display_name: "Oracle Consistency Auditor"
+  short_description: "Audit long-line output consistency and drift causes"
+  default_prompt: "Use $oracle-consistency-auditor to evaluate consistency drift across repeated oracle outputs."

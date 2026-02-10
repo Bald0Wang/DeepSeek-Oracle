@@ -1,0 +1,4 @@
+interface:
+  display_name: "Oracle ZiWei Agent"
+  short_description: "Generate long-term ZiWei trend readings with action plans"
+  default_prompt: "Use $oracle-ziwei-agent to produce a structured long-term ZiWei reading with action suggestions."

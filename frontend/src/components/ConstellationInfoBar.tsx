@@ -29,7 +29,7 @@ export function ConstellationInfoBar({ activeIndex }: ConstellationInfoBarProps)
           <span className="constellation-verse">{info.verse}</span>
         </div>
 
-        <div className="element-legend" aria-label="五行对应颜色与图标">
+        <div className="element-legend" aria-label="五行对应标签">
           {ELEMENT_SEQUENCE.map((elementKey) => {
             const element = ELEMENT_METAS[elementKey];
             return (

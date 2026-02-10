@@ -1,0 +1,4 @@
+interface:
+  display_name: "Oracle Safety Guardian"
+  short_description: "Enforce safety grading and rewrite or refuse risky outputs"
+  default_prompt: "Use $oracle-safety-guardian to grade this request/output and return allow, rewrite, or refuse policy."

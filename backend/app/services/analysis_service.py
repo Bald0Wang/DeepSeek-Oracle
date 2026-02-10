@@ -21,7 +21,7 @@ class AnalysisService:
         self,
         database_path: str,
         queue,
-        iztro_base_url: str,
+        izthon_src_path: str,
         default_provider: str,
         default_model: str,
         default_prompt_version: str,
@@ -32,7 +32,7 @@ class AnalysisService:
         self.task_repo = TaskRepo(database_path)
         self.result_repo = ResultRepo(database_path)
         self.queue = queue
-        self.ziwei_service = ZiweiService(iztro_base_url)
+        self.ziwei_service = ZiweiService(izthon_src_path)
         self.default_provider = default_provider
         self.default_model = default_model
         self.default_prompt_version = default_prompt_version
@@ -315,7 +315,7 @@ def get_analysis_service() -> AnalysisService:
     service = AnalysisService(
         database_path=current_app.config["DATABASE_PATH"],
         queue=current_app.extensions["analysis_queue"],
-        iztro_base_url=current_app.config["IZTRO_BASE_URL"],
+        izthon_src_path=current_app.config["IZTHON_SRC_PATH"],
         default_provider=current_app.config["LLM_PROVIDER"],
         default_model=current_app.config["LLM_MODEL"],
         default_prompt_version=current_app.config["PROMPT_VERSION"],

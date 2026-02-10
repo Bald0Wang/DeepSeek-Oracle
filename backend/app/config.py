@@ -22,10 +22,11 @@ class Config:
     REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     ANALYSIS_QUEUE = os.getenv("ANALYSIS_QUEUE", "analysis")
 
-    IZTRO_BASE_URL = os.getenv("IZTRO_BASE_URL", "http://localhost:3000")
+    IZTHON_SRC_PATH = os.getenv("IZTHON_SRC_PATH", "")
     REQUEST_TIMEOUT_S = int(os.getenv("REQUEST_TIMEOUT_S", "1800"))
     MAX_TASK_RETRY = int(os.getenv("MAX_TASK_RETRY", "2"))
     LLM_MAX_RETRIES = int(os.getenv("LLM_MAX_RETRIES", "2"))
+    ORACLE_EAST_ONLY_MVP = os.getenv("ORACLE_EAST_ONLY_MVP", "true").lower() == "true"
 
     LLM_PROVIDER = os.getenv("LLM_PROVIDER", "mock")
     LLM_MODEL = os.getenv("LLM_MODEL", "mock-v1")

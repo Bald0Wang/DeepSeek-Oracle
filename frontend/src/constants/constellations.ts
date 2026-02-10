@@ -15,11 +15,11 @@ export interface ConstellationInfo {
 }
 
 export const ELEMENT_METAS: Record<ElementKey, ElementMeta> = {
-  wood: { key: "wood", label: "木", icon: "🌿" },
-  fire: { key: "fire", label: "火", icon: "🔥" },
-  earth: { key: "earth", label: "土", icon: "⛰" },
-  metal: { key: "metal", label: "金", icon: "⚒" },
-  water: { key: "water", label: "水", icon: "💧" },
+  wood: { key: "wood", label: "木", icon: "木" },
+  fire: { key: "fire", label: "火", icon: "火" },
+  earth: { key: "earth", label: "土", icon: "土" },
+  metal: { key: "metal", label: "金", icon: "金" },
+  water: { key: "water", label: "水", icon: "水" },
 };
 
 export const ELEMENT_SEQUENCE: ElementKey[] = ["wood", "fire", "earth", "metal", "water"];
