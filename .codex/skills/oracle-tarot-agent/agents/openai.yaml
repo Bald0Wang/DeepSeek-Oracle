@@ -1,0 +1,4 @@
+interface:
+  display_name: "Oracle Tarot Agent"
+  short_description: "Provide symbolic Tarot reflection with grounded actions"
+  default_prompt: "Use $oracle-tarot-agent to provide symbolic tarot interpretation and grounded next steps."

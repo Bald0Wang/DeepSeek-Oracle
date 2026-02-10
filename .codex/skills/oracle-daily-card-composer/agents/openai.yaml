@@ -1,0 +1,4 @@
+interface:
+  display_name: "Oracle Daily Card Composer"
+  short_description: "Compose stable daily cards from profile and calendar context"
+  default_prompt: "Use $oracle-daily-card-composer to generate today's oracle card with fixed output sections."

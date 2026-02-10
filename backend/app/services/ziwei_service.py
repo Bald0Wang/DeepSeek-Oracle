@@ -1,14 +1,15 @@
-import json
+import sys
+from pathlib import Path
 from typing import Any
-
-import requests
 
 from app.utils.errors import business_error
 
 
 class ZiweiService:
-    def __init__(self, base_url: str):
-        self.base_url = base_url.rstrip("/")
+    def __init__(self, izthon_src_path: str = ""):
+        self.izthon_src_path = izthon_src_path
+        self._by_solar = None
+        self._by_lunar = None
 
     def get_astrolabe_data(
         self,
@@ -17,26 +18,18 @@ class ZiweiService:
         gender: str,
         calendar: str,
     ) -> dict[str, Any]:
-        endpoint = "solar" if calendar == "solar" else "lunar"
-        url = f"{self.base_url}/api/astro/{endpoint}"
-
-        payload = {
-            "date": date,
-            "timezone": timezone,
-            "gender": gender,
-        }
-
+        self._load_izthon()
+        normalized_gender = self._normalize_gender(gender)
         try:
-            response = requests.post(
-                url,
-                headers={"Content-Type": "application/json"},
-                data=json.dumps(payload),
-                timeout=30,
-            )
-            response.raise_for_status()
-            return response.json()
-        except requests.RequestException as exc:
-            raise business_error("A2001", f"iztro service unavailable: {exc}", 502, True) from exc
+            if calendar == "solar":
+                astrolabe = self._by_solar(date, timezone, normalized_gender)
+            else:
+                astrolabe = self._by_lunar(date, timezone, normalized_gender)
+            return self._serialize_astrolabe(astrolabe)
+        except ValueError as exc:
+            raise business_error("A1002", f"invalid ziwei input: {exc}", 422, False) from exc
+        except Exception as exc:
+            raise business_error("A2001", f"izthon compute failed: {exc}", 502, True) from exc
 
     def build_text_description(self, main_json_data: dict[str, Any]) -> str:
         return self.convert_main_json_to_text(main_json_data)
@@ -148,3 +141,109 @@ class ZiweiService:
             output_lines.append("----------")
 
         return "\n".join(output_lines)
+
+    def _load_izthon(self) -> None:
+        if self._by_solar and self._by_lunar:
+            return
+
+        candidate_paths: list[Path] = []
+        if self.izthon_src_path:
+            candidate_paths.append(Path(self.izthon_src_path))
+
+        # Monorepo fallback: <outer-root>/izthon/src
+        candidate_paths.append(Path(__file__).resolve().parents[4] / "izthon" / "src")
+
+        for candidate in candidate_paths:
+            if candidate.exists():
+                candidate_str = str(candidate)
+                if candidate_str not in sys.path:
+                    sys.path.insert(0, candidate_str)
+
+        try:
+            from izthon.astro import by_lunar, by_solar
+
+            self._by_solar = by_solar
+            self._by_lunar = by_lunar
+        except ModuleNotFoundError as exc:
+            raise business_error(
+                "A2001",
+                "izthon package unavailable; install izthon or set IZTHON_SRC_PATH",
+                502,
+                True,
+            ) from exc
+
+    @staticmethod
+    def _normalize_gender(gender: str) -> str:
+        mapping = {
+            "男": "male",
+            "女": "female",
+            "male": "male",
+            "female": "female",
+            "m": "male",
+            "f": "female",
+        }
+        normalized = mapping.get(str(gender).strip().lower(), mapping.get(str(gender).strip()))
+        if not normalized:
+            raise business_error("A1002", "gender must be one of: 男, 女", 422, False)
+        return normalized
+
+    @staticmethod
+    def _serialize_star(star: Any) -> dict[str, Any]:
+        return {
+            "name": getattr(star, "name", ""),
+            "type": getattr(star, "type", ""),
+            "scope": getattr(star, "scope", "origin"),
+            "brightness": getattr(star, "brightness", None),
+            "mutagen": getattr(star, "mutagen", None),
+        }
+
+    def _serialize_palace(self, palace: Any) -> dict[str, Any]:
+        decadal = getattr(palace, "decadal", None)
+        decadal_payload = None
+        if decadal:
+            range_value = list(getattr(decadal, "range", []))
+            if len(range_value) != 2:
+                range_value = [0, 0]
+            decadal_payload = {
+                "range": range_value,
+                "heavenlyStem": getattr(decadal, "heavenly_stem", "未知"),
+                "earthlyBranch": getattr(decadal, "earthly_branch", "未知"),
+            }
+
+        return {
+            "index": getattr(palace, "index", 0),
+            "name": getattr(palace, "name", "未知"),
+            "isBodyPalace": bool(getattr(palace, "is_body_palace", False)),
+            "isOriginalPalace": bool(getattr(palace, "is_original_palace", False)),
+            "heavenlyStem": getattr(palace, "heavenly_stem", "未知"),
+            "earthlyBranch": getattr(palace, "earthly_branch", "未知"),
+            "majorStars": [self._serialize_star(star) for star in getattr(palace, "major_stars", [])],
+            "minorStars": [self._serialize_star(star) for star in getattr(palace, "minor_stars", [])],
+            "adjectiveStars": [
+                self._serialize_star(star) for star in getattr(palace, "adjective_stars", [])
+            ],
+            "changsheng12": getattr(palace, "changsheng12", "未知"),
+            "boshi12": getattr(palace, "boshi12", "未知"),
+            "jiangqian12": getattr(palace, "jiangqian12", "未知"),
+            "suiqian12": getattr(palace, "suiqian12", "未知"),
+            "decadal": decadal_payload,
+            "ages": list(getattr(palace, "ages", [])),
+        }
+
+    def _serialize_astrolabe(self, astrolabe: Any) -> dict[str, Any]:
+        return {
+            "gender": getattr(astrolabe, "gender", "未知"),
+            "solarDate": getattr(astrolabe, "solar_date", "未知"),
+            "lunarDate": getattr(astrolabe, "lunar_date", "未知"),
+            "chineseDate": getattr(astrolabe, "chinese_date", "未知"),
+            "time": getattr(astrolabe, "time", "未知"),
+            "timeRange": getattr(astrolabe, "time_range", "未知"),
+            "sign": getattr(astrolabe, "sign", "未知"),
+            "zodiac": getattr(astrolabe, "zodiac", "未知"),
+            "earthlyBranchOfBodyPalace": getattr(astrolabe, "earthly_branch_of_body_palace", "未知"),
+            "earthlyBranchOfSoulPalace": getattr(astrolabe, "earthly_branch_of_soul_palace", "未知"),
+            "soul": getattr(astrolabe, "soul", "未知"),
+            "body": getattr(astrolabe, "body", "未知"),
+            "fiveElementsClass": getattr(astrolabe, "five_elements_class", "未知"),
+            "palaces": [self._serialize_palace(palace) for palace in getattr(astrolabe, "palaces", [])],
+        }

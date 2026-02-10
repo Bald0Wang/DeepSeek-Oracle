@@ -106,3 +106,42 @@ export interface ApiResponse<T> {
   data?: T;
   request_id: string;
 }
+
+export type SelectedSchool = "east" | "west" | "mixed";
+export type EnabledSchool = "ziwei" | "meihua" | "tarot" | "daily_card" | "actionizer" | "philosophy";
+export type DisclaimerLevel = "none" | "light" | "strong";
+
+export interface OracleActionItem {
+  task: string;
+  when: string;
+  reason: string;
+}
+
+export interface OracleTraceItem {
+  stage: string;
+  skill: string;
+  reason?: string;
+  intent?: string;
+  skills?: string[];
+  reasons?: string[];
+  result?: Record<string, unknown>;
+}
+
+export interface OracleChatRequest {
+  user_query: string;
+  conversation_history_summary?: string;
+  user_profile_summary?: string;
+  selected_school?: SelectedSchool;
+  enabled_schools?: EnabledSchool[];
+  birth_info?: BirthInfo;
+  provider?: string;
+  model?: string;
+}
+
+export interface OracleChatResponse {
+  answer_text: string;
+  follow_up_questions: string[];
+  action_items: OracleActionItem[];
+  safety_disclaimer_level: DisclaimerLevel;
+  trace: OracleTraceItem[];
+}

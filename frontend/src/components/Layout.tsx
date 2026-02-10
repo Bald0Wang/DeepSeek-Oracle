@@ -32,17 +32,20 @@ export function Layout() {
         <span />
       </div>
       <div className="app-observation-label" aria-hidden="true">
-        Tian Yan Astro Observation
+        天衍星历观测
       </div>
 
       <header className="top-nav">
         <Link to="/" className="top-nav__brand">
           <span className="top-nav__brand-icon" aria-hidden="true" />
-          DeepSeek Oracle
+          天衍 Oracle
         </Link>
         <nav className="top-nav__links">
           <NavLink to="/" end className={({ isActive }) => isActive ? "active" : ""}>
             开始分析
+          </NavLink>
+          <NavLink to="/oracle" className={({ isActive }) => isActive ? "active" : ""}>
+            咨询对话
           </NavLink>
           <NavLink to="/history" className={({ isActive }) => isActive ? "active" : ""}>
             历史记录
@@ -57,7 +60,7 @@ export function Layout() {
       {isHome ? <ConstellationInfoBar activeIndex={activeConstellationIndex} /> : null}
 
       <footer className="app-footer">
-        DeepSeek Oracle · 紫微分析引擎
+        天衍 Oracle · 东方命理咨询与行动建议
       </footer>
     </div>
   );

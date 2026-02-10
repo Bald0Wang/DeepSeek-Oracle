@@ -1,0 +1,4 @@
+interface:
+  display_name: "Oracle Actionizer"
+  short_description: "Convert oracle advice into calendar-ready action tasks"
+  default_prompt: "Use $oracle-actionizer to transform this guidance into concrete calendar tasks."

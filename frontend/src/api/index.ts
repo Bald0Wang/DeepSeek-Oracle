@@ -6,6 +6,8 @@ import type {
   ApiResponse,
   BirthInfo,
   HistoryResponseData,
+  OracleChatRequest,
+  OracleChatResponse,
   SubmitAnalysisData,
   TaskData
 } from "../types";
@@ -50,3 +52,6 @@ export const getHistory = async (page = 1, pageSize = 20) =>
 
 export const exportReport = async (id: number, scope = "full") =>
   api.get(`/export/${id}?scope=${scope}`, { responseType: "blob" });
+
+export const oracleChat = async (payload: OracleChatRequest) =>
+  unwrap(await api.post<ApiResponse<OracleChatResponse>>("/oracle/chat", payload));

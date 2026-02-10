@@ -1,0 +1,4 @@
+interface:
+  display_name: "Post-Dev Security Reviewer"
+  short_description: "Provide security hardening review after each dev task"
+  default_prompt: "Review recent code changes and provide prioritized security hardening suggestions with file evidence and fixes."

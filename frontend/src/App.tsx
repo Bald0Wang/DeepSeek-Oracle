@@ -5,6 +5,7 @@ import DetailPage from "./pages/Detail";
 import HistoryPage from "./pages/History";
 import HomePage from "./pages/Home";
 import LoadingPage from "./pages/Loading";
+import OracleChatPage from "./pages/OracleChat";
 import ResultPage from "./pages/Result";
 
 
@@ -14,6 +15,7 @@ export default function App() {
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<HomePage />} />
+          <Route path="/oracle" element={<OracleChatPage />} />
           <Route path="/loading/:taskId" element={<LoadingPage />} />
           <Route path="/result/:id" element={<ResultPage />} />
           <Route path="/result/:id/:type" element={<DetailPage />} />

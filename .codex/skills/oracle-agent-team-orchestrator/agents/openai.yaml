@@ -1,0 +1,4 @@
+interface:
+  display_name: "Oracle Team Orchestrator"
+  short_description: "Route user intents to oracle specialist skills safely"
+  default_prompt: "Use $oracle-agent-team-orchestrator to route this request across specialist oracle skills and compose one final answer."
