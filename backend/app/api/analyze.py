@@ -2,6 +2,7 @@ from flask import Blueprint, request
 
 from app.schemas import validate_analyze_payload
 from app.services import get_analysis_service
+from app.utils.auth import require_auth
 from app.utils.response import success_response
 
 
@@ -9,6 +10,7 @@ analyze_bp = Blueprint("analyze", __name__)
 
 
 @analyze_bp.post("/analyze")
+@require_auth()
 def submit_analysis():
     payload = request.get_json(silent=True) or {}
     normalized = validate_analyze_payload(payload)
@@ -40,6 +42,7 @@ def submit_analysis():
 
 
 @analyze_bp.post("/check_cache")
+@require_auth()
 def check_cache():
     payload = request.get_json(silent=True) or {}
     normalized = validate_analyze_payload(payload)

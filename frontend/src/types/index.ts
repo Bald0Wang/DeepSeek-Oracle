@@ -145,3 +145,95 @@ export interface OracleChatResponse {
   safety_disclaimer_level: DisclaimerLevel;
   trace: OracleTraceItem[];
 }
+
+export type UserRole = "admin" | "user";
+
+export interface UserProfile {
+  id: number;
+  email: string;
+  role: UserRole;
+  is_active: boolean;
+  last_login_at?: string | null;
+  created_at: string;
+}
+
+export interface AuthPayload {
+  token: string;
+  user: UserProfile;
+}
+
+export interface AuthRequest {
+  email: string;
+  password: string;
+  email_code?: string;
+  invite_code?: string;
+}
+
+export interface EmailCodeRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  email: string;
+  reset_code: string;
+  new_password: string;
+}
+
+export interface AuthMeData {
+  user: UserProfile;
+}
+
+export interface Pagination {
+  page: number;
+  page_size: number;
+  total: number;
+  has_next: boolean;
+}
+
+export interface SystemLogItem {
+  id: number;
+  request_id?: string | null;
+  method?: string | null;
+  path?: string | null;
+  status_code?: number | null;
+  duration_ms?: number | null;
+  level: string;
+  message?: string | null;
+  user_id?: number | null;
+  user_email?: string | null;
+  ip?: string | null;
+  user_agent?: string | null;
+  created_at: string;
+}
+
+export interface SystemLogResponse {
+  items: SystemLogItem[];
+  pagination: Pagination;
+}
+
+export interface AdminUserListResponse {
+  items: UserProfile[];
+  pagination: Pagination;
+}
+
+export interface AdminDashboardData {
+  user_metrics: {
+    total_users: number;
+    admin_users: number;
+  };
+  analysis_metrics: {
+    total_tasks: number;
+    queued_tasks: number;
+    running_tasks: number;
+    succeeded_tasks: number;
+    failed_tasks: number;
+    total_results: number;
+    results_last_24h: number;
+  };
+  log_metrics: {
+    total_logs: number;
+    error_logs: number;
+    logs_last_24h: number;
+    top_paths: Array<{ path: string; total: number }>;
+  };
+}

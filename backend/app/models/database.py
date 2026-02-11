@@ -55,6 +55,55 @@ CREATE TABLE IF NOT EXISTS analysis_items (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(result_id, analysis_type)
 );
+
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'user',
+  is_active INTEGER NOT NULL DEFAULT 1,
+  invite_code_used TEXT,
+  last_login_at DATETIME,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_role_created_at
+ON users(role, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS system_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  request_id TEXT,
+  method TEXT,
+  path TEXT,
+  status_code INTEGER,
+  duration_ms INTEGER,
+  level TEXT NOT NULL DEFAULT 'info',
+  message TEXT,
+  user_id INTEGER,
+  user_email TEXT,
+  ip TEXT,
+  user_agent TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_system_logs_created_at
+ON system_logs(created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_system_logs_path_created_at
+ON system_logs(path, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS email_verification_codes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email TEXT NOT NULL,
+  purpose TEXT NOT NULL,
+  code_hash TEXT NOT NULL,
+  expires_at DATETIME NOT NULL,
+  consumed_at DATETIME,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_email_codes_lookup
+ON email_verification_codes(email, purpose, created_at DESC);
 """
 
 
