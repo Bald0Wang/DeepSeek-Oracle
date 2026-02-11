@@ -18,6 +18,7 @@
 - 多智能体咨询编排（安全审查 + 长短线路由 + 统一答复）
 - 历史记录查询与 Markdown 报告导出
 - 缓存命中与任务复用（避免重复推演）
+- 邮箱验证码注册与找回密码（SMTP）
 
 ## 新增接口（多智能体咨询）
 
@@ -87,6 +88,55 @@ npm run dev
 ## Docker 一键启动
 
 项目已提供完整容器编排：`frontend + backend + worker + redis`。
+
+### 推荐：脚本一键启动（Windows / PowerShell）
+
+```bash
+.\docker.ps1 up
+```
+
+可选参数：
+
+- `.\docker.ps1 up -NoBuild`：跳过镜像重建，快速拉起
+- `.\docker.ps1 restart`：重启全部容器
+- `.\docker.ps1 logs`：查看实时日志
+- `.\docker.ps1 down`：停止服务
+
+双击启动（Windows）：
+
+```bash
+start-docker.bat
+```
+
+脚本会自动：
+
+1) 若缺少 `.env.docker`，从 `.env.docker.example` 生成  
+2) 校验 `IZTHON_SRC_PATH_HOST` 是否存在  
+3) 执行 `docker compose up -d --build`  
+4) 等待后端健康检查通过并输出访问地址
+
+### 邮箱 SMTP 配置（QQ邮箱）
+
+已支持以下认证流程：
+
+- `POST /api/auth/register/send-code`：发送注册验证码
+- `POST /api/auth/register`：邮箱 + 验证码 + 密码注册
+- `POST /api/auth/password/forgot`：发送找回密码验证码
+- `POST /api/auth/password/reset`：验证码重置密码
+
+需要在 `.env` 或 `.env.docker` 中配置：
+
+- `EMAIL_VERIFY_REQUIRED=true`
+- `EMAIL_CODE_EXPIRE_MINUTES=10`
+- `SMTP_HOST=smtp.qq.com`
+- `SMTP_PORT=465`
+- `SMTP_USE_SSL=true`
+- `SMTP_USERNAME=<你的邮箱>`
+- `SMTP_PASSWORD=<QQ邮箱授权码>`
+- `SMTP_FROM_EMAIL=<发件邮箱>`
+- `SMTP_FROM_NAME=DeepSeek Oracle`
+
+### 手动方式（通用）
 
 1) 准备 Docker 环境变量
 
