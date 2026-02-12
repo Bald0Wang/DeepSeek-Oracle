@@ -119,6 +119,8 @@ start-docker.bat
 
 已支持以下认证流程：
 
+- `POST /api/auth/admin/send-code`：向特殊管理员邮箱发送后台登录验证码
+- `POST /api/auth/admin/code-login`：特殊管理员邮箱 + 验证码直接登录后台
 - `POST /api/auth/register/send-code`：发送注册验证码
 - `POST /api/auth/register`：邮箱 + 验证码 + 密码注册
 - `POST /api/auth/password/forgot`：发送找回密码验证码
@@ -128,6 +130,7 @@ start-docker.bat
 
 - `EMAIL_VERIFY_REQUIRED=true`
 - `EMAIL_CODE_EXPIRE_MINUTES=10`
+- `SPECIAL_ADMIN_EMAIL=bald0wang@qq.com`
 - `SMTP_HOST=smtp.qq.com`
 - `SMTP_PORT=465`
 - `SMTP_USE_SSL=true`
@@ -149,7 +152,7 @@ cp .env.docker.example .env.docker
 - `IZTHON_SRC_PATH_HOST`：本地 `izthon/src` 路径（紫微计算依赖，默认 `../izthon/src`）
 - `FRONTEND_PORT`：前端端口，默认 `8080`
 - `BACKEND_PORT`：后端端口，默认 `5000`
-- `LLM_PROVIDER`：默认 `mock`
+- `LLM_PROVIDER`：默认 `volcano`（Ark）
 
 2) 启动服务
 

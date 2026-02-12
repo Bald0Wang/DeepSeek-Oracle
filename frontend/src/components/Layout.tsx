@@ -84,14 +84,9 @@ export function Layout({ user, authReady, onLogout }: LayoutProps) {
               ) : null}
             </>
           ) : (
-            <>
-              <NavLink to="/login" className={({ isActive }) => isActive ? "active" : ""}>
-                登录
-              </NavLink>
-              <NavLink to="/register" className={({ isActive }) => isActive ? "active" : ""}>
-                注册
-              </NavLink>
-            </>
+            <NavLink to="/login" className={({ isActive }) => isActive ? "active" : ""}>
+              后台登录
+            </NavLink>
           )}
         </nav>
         <div className="top-nav__auth">

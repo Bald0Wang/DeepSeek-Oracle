@@ -2,6 +2,7 @@ import axios from "axios";
 
 import type {
   AdminDashboardData,
+  AdminCodeLoginRequest,
   AdminUserListResponse,
   AnalysisDetailItem,
   AnalysisResult,
@@ -90,6 +91,12 @@ export const registerByEmail = async (payload: AuthRequest) =>
 
 export const loginByEmail = async (payload: AuthRequest) =>
   unwrap(await api.post<ApiResponse<AuthPayload>>("/auth/login", payload));
+
+export const sendAdminLoginCode = async (payload: EmailCodeRequest) =>
+  unwrap(await api.post<ApiResponse<{ sent: boolean; expire_minutes: number }>>("/auth/admin/send-code", payload));
+
+export const loginAdminByCode = async (payload: AdminCodeLoginRequest) =>
+  unwrap(await api.post<ApiResponse<AuthPayload>>("/auth/admin/code-login", payload));
 
 export const sendRegisterCode = async (payload: EmailCodeRequest) =>
   unwrap(await api.post<ApiResponse<{ sent: boolean; expire_minutes: number }>>("/auth/register/send-code", payload));

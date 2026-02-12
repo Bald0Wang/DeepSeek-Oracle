@@ -1,10 +1,12 @@
 from flask import Blueprint, g, request
 
 from app.schemas import (
+    validate_admin_code_login_payload,
     validate_forgot_password_payload,
     validate_login_payload,
     validate_register_payload,
     validate_reset_password_payload,
+    validate_send_admin_login_code_payload,
     validate_send_register_code_payload,
 )
 from app.services.auth_service import get_auth_service
@@ -31,6 +33,23 @@ def login():
     data = get_auth_service().login(**normalized)
     g.current_user = data.get("user")
     return success_response(message="logged_in", data=data)
+
+
+@auth_bp.post("/auth/admin/send-code")
+def send_admin_login_code():
+    payload = request.get_json(silent=True) or {}
+    normalized = validate_send_admin_login_code_payload(payload)
+    data = get_auth_service().send_admin_login_code(**normalized)
+    return success_response(message="admin_login_code_sent", data=data)
+
+
+@auth_bp.post("/auth/admin/code-login")
+def admin_code_login():
+    payload = request.get_json(silent=True) or {}
+    normalized = validate_admin_code_login_payload(payload)
+    data = get_auth_service().login_admin_by_code(**normalized)
+    g.current_user = data.get("user")
+    return success_response(message="admin_logged_in", data=data)
 
 
 @auth_bp.post("/auth/register/send-code")

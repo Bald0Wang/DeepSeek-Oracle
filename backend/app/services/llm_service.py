@@ -18,11 +18,13 @@ class LLMService:
         self,
         provider_name: str,
         model: str,
+        provider_config: dict[str, Any] | None = None,
         timeout_s: int = 1800,
         max_retries: int = 2,
     ):
         self.provider_name = provider_name
         self.model = model
+        self.provider_config = provider_config or {}
         self.timeout_s = timeout_s
         self.max_retries = max_retries
 
@@ -35,7 +37,11 @@ class LLMService:
         response = None
         for attempt in range(self.max_retries + 1):
             try:
-                provider = create_provider(self.provider_name, self.model)
+                provider = create_provider(
+                    self.provider_name,
+                    self.model,
+                    app_config=self.provider_config,
+                )
                 response = provider.generate(prompt, timeout_s=self.timeout_s)
                 break
             except AppError as exc:

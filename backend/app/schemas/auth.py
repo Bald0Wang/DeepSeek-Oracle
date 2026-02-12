@@ -39,6 +39,12 @@ def validate_send_register_code_payload(payload: dict) -> dict:
     return {"email": _validate_email(payload)}
 
 
+def validate_send_admin_login_code_payload(payload: dict) -> dict:
+    if not isinstance(payload, dict):
+        raise validation_error("body", "invalid json body")
+    return {"email": _validate_email(payload)}
+
+
 def validate_register_payload(payload: dict) -> dict:
     if not isinstance(payload, dict):
         raise validation_error("body", "invalid json body")
@@ -77,6 +83,15 @@ def validate_login_payload(payload: dict) -> dict:
         raise validation_error("password", "password is required")
 
     return {"email": email, "password": password}
+
+
+def validate_admin_code_login_payload(payload: dict) -> dict:
+    if not isinstance(payload, dict):
+        raise validation_error("body", "invalid json body")
+
+    email = _validate_email(payload)
+    login_code = _validate_code(payload.get("login_code"), "login_code")
+    return {"email": email, "login_code": login_code}
 
 
 def validate_forgot_password_payload(payload: dict) -> dict:

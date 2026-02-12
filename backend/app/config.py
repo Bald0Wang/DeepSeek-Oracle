@@ -38,6 +38,7 @@ class Config:
     INVITE_ONLY = _to_bool(os.getenv("INVITE_ONLY", "false"))
     INVITE_CODES = _split_csv(os.getenv("INVITE_CODES", ""))
     ADMIN_EMAILS = _split_csv(os.getenv("ADMIN_EMAILS", ""))
+    SPECIAL_ADMIN_EMAIL = os.getenv("SPECIAL_ADMIN_EMAIL", "bald0wang@qq.com").strip().lower()
     EMAIL_VERIFY_REQUIRED = _to_bool(os.getenv("EMAIL_VERIFY_REQUIRED", "true"), True)
     EMAIL_CODE_EXPIRE_MINUTES = int(os.getenv("EMAIL_CODE_EXPIRE_MINUTES", "10"))
 
@@ -50,8 +51,8 @@ class Config:
     SMTP_FROM_NAME = os.getenv("SMTP_FROM_NAME", "DeepSeek Oracle")
     SMTP_TIMEOUT_S = int(os.getenv("SMTP_TIMEOUT_S", "20"))
 
-    LLM_PROVIDER = os.getenv("LLM_PROVIDER", "mock")
-    LLM_MODEL = os.getenv("LLM_MODEL", "mock-v1")
+    LLM_PROVIDER = os.getenv("LLM_PROVIDER", "volcano")
+    LLM_MODEL = os.getenv("LLM_MODEL", "doubao-seed-1-8-251228")
     PROMPT_VERSION = os.getenv("PROMPT_VERSION", "v1")
 
     VOLCANO_API_KEY = os.getenv("ARK_API_KEY", "")
