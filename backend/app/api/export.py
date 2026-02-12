@@ -1,4 +1,4 @@
-from flask import Blueprint, request, send_file
+from flask import Blueprint, g, request, send_file
 
 from app.services import get_analysis_service
 from app.utils.auth import require_auth
@@ -18,7 +18,13 @@ def export_result(result_id: int):
         raise validation_error("scope", "scope must be full|marriage_path|challenges|partner_character")
 
     service = get_analysis_service()
-    markdown_path = service.export_markdown_file(result_id=result_id, scope=scope)
+    current_user = getattr(g, "current_user", None) or {}
+    markdown_path = service.export_markdown_file(
+        result_id=result_id,
+        scope=scope,
+        user_id=int(current_user.get("id", 0)),
+        is_admin=str(current_user.get("role", "")) == "admin",
+    )
     return send_file(
         markdown_path,
         as_attachment=True,

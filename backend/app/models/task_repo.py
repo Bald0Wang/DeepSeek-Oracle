@@ -16,6 +16,7 @@ class TaskRepo:
     def create_task(
         self,
         task_id: str,
+        user_id: int,
         birth_info: dict[str, Any],
         provider: str,
         model: str,
@@ -26,13 +27,14 @@ class TaskRepo:
             cursor.execute(
                 """
                 INSERT INTO analysis_tasks (
-                  task_id, status, progress, step,
+                  task_id, user_id, status, progress, step,
                   birth_date, timezone, gender, calendar,
                   provider, model, prompt_version, cache_key
-                ) VALUES (?, 'queued', 0, 'queued', ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, 'queued', 0, 'queued', ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     task_id,
+                    int(user_id),
                     birth_info["date"],
                     int(birth_info["timezone"]),
                     birth_info["gender"],
@@ -45,26 +47,44 @@ class TaskRepo:
             )
         return self.get_task(task_id)
 
-    def get_task(self, task_id: str) -> dict[str, Any] | None:
+    def get_task(
+        self,
+        task_id: str,
+        user_id: int | None = None,
+        is_admin: bool = False,
+    ) -> dict[str, Any] | None:
         with db_cursor(self.database_path) as cursor:
-            cursor.execute(
-                "SELECT * FROM analysis_tasks WHERE task_id = ? LIMIT 1", (task_id,)
-            )
+            if is_admin or user_id is None:
+                cursor.execute(
+                    "SELECT * FROM analysis_tasks WHERE task_id = ? LIMIT 1",
+                    (task_id,),
+                )
+            else:
+                cursor.execute(
+                    """
+                    SELECT *
+                    FROM analysis_tasks
+                    WHERE task_id = ? AND user_id = ?
+                    LIMIT 1
+                    """,
+                    (task_id, int(user_id)),
+                )
             row = cursor.fetchone()
         return _row_to_dict(row)
 
-    def find_active_task_by_cache_key(self, cache_key: str) -> dict[str, Any] | None:
+    def find_active_task_by_cache_key(self, cache_key: str, user_id: int) -> dict[str, Any] | None:
         with db_cursor(self.database_path) as cursor:
             cursor.execute(
                 """
                 SELECT *
                 FROM analysis_tasks
                 WHERE cache_key = ?
+                  AND user_id = ?
                   AND status IN ('queued', 'running')
                 ORDER BY id DESC
                 LIMIT 1
                 """,
-                (cache_key,),
+                (cache_key, int(user_id)),
             )
             row = cursor.fetchone()
         return _row_to_dict(row)

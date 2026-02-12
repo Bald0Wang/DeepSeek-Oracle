@@ -1,4 +1,4 @@
-from flask import Blueprint
+from flask import Blueprint, g
 
 from app.services import get_analysis_service
 from app.utils.auth import require_auth
@@ -12,7 +12,12 @@ task_bp = Blueprint("task", __name__)
 @require_auth()
 def get_task(task_id: str):
     service = get_analysis_service()
-    data = service.get_task(task_id)
+    current_user = getattr(g, "current_user", None) or {}
+    data = service.get_task(
+        task_id,
+        user_id=int(current_user.get("id", 0)),
+        is_admin=str(current_user.get("role", "")) == "admin",
+    )
     return success_response(data=data)
 
 
@@ -20,7 +25,12 @@ def get_task(task_id: str):
 @require_auth()
 def cancel_task(task_id: str):
     service = get_analysis_service()
-    data = service.cancel_task(task_id)
+    current_user = getattr(g, "current_user", None) or {}
+    data = service.cancel_task(
+        task_id,
+        user_id=int(current_user.get("id", 0)),
+        is_admin=str(current_user.get("role", "")) == "admin",
+    )
     return success_response(data=data)
 
 
@@ -28,5 +38,10 @@ def cancel_task(task_id: str):
 @require_auth()
 def retry_task(task_id: str):
     service = get_analysis_service()
-    data = service.retry_task(task_id)
+    current_user = getattr(g, "current_user", None) or {}
+    data = service.retry_task(
+        task_id,
+        user_id=int(current_user.get("id", 0)),
+        is_admin=str(current_user.get("role", "")) == "admin",
+    )
     return success_response(data=data)

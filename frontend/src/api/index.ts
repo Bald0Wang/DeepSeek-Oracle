@@ -13,6 +13,7 @@ import type {
   ApiResponse,
   BirthInfo,
   HistoryResponseData,
+  InsightOverviewData,
   OracleChatRequest,
   OracleChatResponse,
   ResetPasswordRequest,
@@ -71,6 +72,11 @@ export const cancelTask = async (taskId: string) =>
 
 export const getResult = async (id: number) =>
   unwrap(await api.get<ApiResponse<AnalysisResult>>(`/result/${id}`));
+
+export const getInsightOverview = async (resultId?: number) => {
+  const query = typeof resultId === "number" ? `?result_id=${resultId}` : "";
+  return unwrap(await api.get<ApiResponse<InsightOverviewData>>(`/insights/overview${query}`));
+};
 
 export const getResultItem = async (
   id: number,

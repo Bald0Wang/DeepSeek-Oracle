@@ -105,6 +105,7 @@ def create_app() -> Flask:
     def legacy_check_cache():
         payload = request.get_json(silent=True) or {}
         normalized = validate_analyze_payload(payload)
+        normalized["user_id"] = 0
         data = get_analysis_service().check_cache(normalized)
         return jsonify({"cached_results": data.get("cached_results")})
 

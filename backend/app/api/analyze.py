@@ -1,4 +1,4 @@
-from flask import Blueprint, request
+from flask import Blueprint, g, request
 
 from app.schemas import validate_analyze_payload
 from app.services import get_analysis_service
@@ -14,6 +14,8 @@ analyze_bp = Blueprint("analyze", __name__)
 def submit_analysis():
     payload = request.get_json(silent=True) or {}
     normalized = validate_analyze_payload(payload)
+    current_user = getattr(g, "current_user", None) or {}
+    normalized["user_id"] = int(current_user.get("id", 0))
 
     service = get_analysis_service()
     result = service.submit_analysis(normalized)
@@ -46,6 +48,8 @@ def submit_analysis():
 def check_cache():
     payload = request.get_json(silent=True) or {}
     normalized = validate_analyze_payload(payload)
+    current_user = getattr(g, "current_user", None) or {}
+    normalized["user_id"] = int(current_user.get("id", 0))
 
     service = get_analysis_service()
     data = service.check_cache(normalized)

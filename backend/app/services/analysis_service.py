@@ -41,6 +41,7 @@ class AnalysisService:
         self.llm_max_retries = llm_max_retries
 
     def submit_analysis(self, payload: dict[str, Any]) -> dict[str, Any]:
+        user_id = int(payload["user_id"])
         provider = payload.get("provider", self.default_provider)
         model = payload.get("model", self.default_model)
         prompt_version = payload.get("prompt_version", self.default_prompt_version)
@@ -53,6 +54,7 @@ class AnalysisService:
         }
 
         cache_key = self._build_cache_key(
+            user_id=user_id,
             date=birth_info["date"],
             timezone=birth_info["timezone"],
             gender=birth_info["gender"],
@@ -62,14 +64,14 @@ class AnalysisService:
             prompt_version=prompt_version,
         )
 
-        cached = self.result_repo.find_by_cache_key(cache_key)
+        cached = self.result_repo.find_by_cache_key(cache_key, user_id=user_id)
         if cached:
             return {
                 "hit_cache": True,
                 "result_id": int(cached["id"]),
             }
 
-        active_task = self.task_repo.find_active_task_by_cache_key(cache_key)
+        active_task = self.task_repo.find_active_task_by_cache_key(cache_key, user_id=user_id)
         if active_task:
             return {
                 "hit_cache": False,
@@ -82,6 +84,7 @@ class AnalysisService:
         task_id = f"task_{uuid.uuid4().hex[:16]}"
         self.task_repo.create_task(
             task_id=task_id,
+            user_id=user_id,
             birth_info=birth_info,
             provider=provider,
             model=model,
@@ -98,8 +101,8 @@ class AnalysisService:
             "poll_after_ms": 2000,
         }
 
-    def get_task(self, task_id: str) -> dict[str, Any]:
-        task = self.task_repo.get_task(task_id)
+    def get_task(self, task_id: str, user_id: int, is_admin: bool = False) -> dict[str, Any]:
+        task = self.task_repo.get_task(task_id, user_id=user_id, is_admin=is_admin)
         if not task:
             raise business_error("A4004", "task not found", 404, False)
 
@@ -123,8 +126,8 @@ class AnalysisService:
             "updated_at": task.get("finished_at") or task.get("started_at") or task.get("created_at"),
         }
 
-    def cancel_task(self, task_id: str) -> dict[str, Any]:
-        task = self.task_repo.get_task(task_id)
+    def cancel_task(self, task_id: str, user_id: int, is_admin: bool = False) -> dict[str, Any]:
+        task = self.task_repo.get_task(task_id, user_id=user_id, is_admin=is_admin)
         if not task:
             raise business_error("A4004", "task not found", 404, False)
 
@@ -134,8 +137,8 @@ class AnalysisService:
         self.task_repo.mark_cancelled(task_id)
         return {"task_id": task_id, "status": "cancelled"}
 
-    def retry_task(self, task_id: str) -> dict[str, Any]:
-        task = self.task_repo.get_task(task_id)
+    def retry_task(self, task_id: str, user_id: int, is_admin: bool = False) -> dict[str, Any]:
+        task = self.task_repo.get_task(task_id, user_id=user_id, is_admin=is_admin)
         if not task:
             raise business_error("A4004", "task not found", 404, False)
 
@@ -150,30 +153,54 @@ class AnalysisService:
         self._enqueue_task(task_id)
         return {"task_id": task_id, "status": "queued", "retry_count": retry_count}
 
-    def get_result(self, result_id: int) -> dict[str, Any]:
-        result = self.result_repo.get_result(result_id)
+    def get_result(self, result_id: int, user_id: int, is_admin: bool = False) -> dict[str, Any]:
+        result = self.result_repo.get_result(result_id, user_id=user_id, is_admin=is_admin)
         if not result:
             raise business_error("A4004", "result not found", 404, False)
         return result
 
-    def get_result_item(self, result_id: int, analysis_type: str) -> dict[str, Any]:
+    def get_result_item(
+        self,
+        result_id: int,
+        analysis_type: str,
+        user_id: int,
+        is_admin: bool = False,
+    ) -> dict[str, Any]:
         if analysis_type not in {"marriage_path", "challenges", "partner_character"}:
             raise business_error("A1002", "invalid analysis type", 422, False)
 
-        item = self.result_repo.get_result_item(result_id, analysis_type)
+        item = self.result_repo.get_result_item(
+            result_id,
+            analysis_type,
+            user_id=user_id,
+            is_admin=is_admin,
+        )
         if not item:
             raise business_error("A4004", "analysis item not found", 404, False)
         return item
 
-    def get_history(self, page: int = 1, page_size: int = 20) -> dict[str, Any]:
-        return self.result_repo.get_history(page=page, page_size=page_size)
+    def get_history(
+        self,
+        page: int = 1,
+        page_size: int = 20,
+        user_id: int | None = None,
+        is_admin: bool = False,
+    ) -> dict[str, Any]:
+        return self.result_repo.get_history(
+            page=page,
+            page_size=page_size,
+            user_id=user_id,
+            is_admin=is_admin,
+        )
 
     def check_cache(self, payload: dict[str, Any]) -> dict[str, Any]:
+        user_id = int(payload["user_id"])
         provider = payload.get("provider", self.default_provider)
         model = payload.get("model", self.default_model)
         prompt_version = payload.get("prompt_version", self.default_prompt_version)
 
         cache_key = self._build_cache_key(
+            user_id=user_id,
             date=payload["date"],
             timezone=int(payload["timezone"]),
             gender=payload["gender"],
@@ -183,11 +210,11 @@ class AnalysisService:
             prompt_version=prompt_version,
         )
 
-        cached = self.result_repo.find_by_cache_key(cache_key)
+        cached = self.result_repo.find_by_cache_key(cache_key, user_id=user_id)
         if not cached:
             return {"cached_results": None, "result_id": None}
 
-        result = self.result_repo.get_result(int(cached["id"]))
+        result = self.result_repo.get_result(int(cached["id"]), user_id=user_id, is_admin=False)
         if not result:
             return {"cached_results": None, "result_id": None}
 
@@ -204,8 +231,19 @@ class AnalysisService:
             "result_id": result["id"],
         }
 
-    def export_markdown_file(self, result_id: int, scope: str = "full") -> Path:
-        result = self.get_result(result_id)
+    def export_markdown_file(
+        self,
+        result_id: int,
+        scope: str = "full",
+        user_id: int | None = None,
+        is_admin: bool = False,
+    ) -> Path:
+        if is_admin:
+            result = self.get_result(result_id, user_id=0, is_admin=True)
+        else:
+            if user_id is None:
+                raise business_error("A4010", "user_id is required", 401, False)
+            result = self.get_result(result_id, user_id=user_id, is_admin=False)
         content = self.result_repo.render_markdown(result=result, scope=scope)
 
         tmp_dir = Path(tempfile.gettempdir())
@@ -265,9 +303,12 @@ class AnalysisService:
 
             self._raise_if_cancelled(task_id)
             self.task_repo.mark_progress(task_id, step="persist_result", progress=95)
+            owner_user_id = task.get("user_id")
+            owner_user_id = int(owner_user_id) if owner_user_id is not None else 0
 
             result_id = self.result_repo.save_result(
                 cache_key=task["cache_key"],
+                user_id=owner_user_id,
                 birth_info=birth_info,
                 text_description=text_description,
                 provider=task["provider"],
@@ -277,6 +318,26 @@ class AnalysisService:
                 total_execution_time=llm_output["total_execution_time"],
                 total_token_count=llm_output["total_token_count"],
             )
+
+            self.task_repo.mark_progress(task_id, step="prepare_calendar_kline", progress=98)
+            try:
+                from app.services.insight_service import get_insight_service
+
+                insight_service = get_insight_service()
+                insight_service.generate_and_store_initial(
+                    user_id=owner_user_id,
+                    birth_info=birth_info,
+                    astrolabe_data=astrolabe_data,
+                    source_result_id=result_id,
+                )
+            except Exception as exc:  # pragma: no cover
+                current_app.logger.warning(
+                    "generate calendar/kline failed task_id=%s result_id=%s err=%s",
+                    task_id,
+                    result_id,
+                    exc,
+                )
+
             self.task_repo.mark_succeeded(task_id, result_id)
         except CancelledTaskError:
             self.task_repo.mark_cancelled(task_id)
@@ -307,6 +368,7 @@ class AnalysisService:
     @staticmethod
     def _build_cache_key(
         *,
+        user_id: int,
         date: str,
         timezone: int,
         gender: str,
@@ -315,7 +377,10 @@ class AnalysisService:
         model: str,
         prompt_version: str,
     ) -> str:
-        plain = f"{date}|{timezone}|{gender}|{calendar}|{provider}|{model}|{prompt_version}"
+        plain = (
+            f"{user_id}|{date}|{timezone}|{gender}|{calendar}|"
+            f"{provider}|{model}|{prompt_version}"
+        )
         return hashlib.sha256(plain.encode("utf-8")).hexdigest()
 
 

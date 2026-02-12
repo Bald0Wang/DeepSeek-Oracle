@@ -370,6 +370,48 @@ select {
   gap: 1rem;
 }
 
+.insights-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.insights-toolbar {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.insights-segmented {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  border: 1px solid rgba(194, 151, 94, 0.3);
+  border-radius: var(--radius-full);
+  padding: 0.25rem;
+  background: rgba(46, 25, 19, 0.62);
+}
+
+.insights-segmented button {
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--text-secondary);
+  min-height: 2.2rem;
+  padding: 0.35rem 0.7rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.insights-segmented button:hover {
+  color: #f2dcb8;
+}
+
+.insights-segmented button.active {
+  color: #f8ead3;
+  background: rgba(188, 142, 84, 0.2);
+  border-color: rgba(188, 142, 84, 0.4);
+}
+
 .admin-log-list,
 .admin-user-list {
   display: grid;
@@ -1243,6 +1285,58 @@ select:focus {
   display: flex;
   flex-wrap: wrap;
   gap: 0.625rem;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.625rem;
+}
+
+.calendar-day-card {
+  border: 1px solid rgba(183, 141, 88, 0.24);
+  border-radius: var(--radius-sm);
+  background: rgba(44, 25, 19, 0.64);
+  padding: 0.625rem;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.calendar-day-card__date {
+  color: #f4e6d2;
+  font-size: 0.875rem;
+  font-weight: 620;
+}
+
+.calendar-day-card__score,
+.calendar-day-card__text {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+.kline-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.kline-item {
+  border: 1px solid rgba(183, 141, 88, 0.24);
+  border-radius: var(--radius-sm);
+  background: rgba(44, 25, 19, 0.64);
+  padding: 0.625rem;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.kline-item__title {
+  color: #f4e6d2;
+  font-size: 0.875rem;
+  font-weight: 620;
+}
+
+.kline-item__meta {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
 }
 
 .time-chart {

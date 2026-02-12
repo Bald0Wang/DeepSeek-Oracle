@@ -1,7 +1,7 @@
-import { FormEvent, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { FormEvent, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
-import { loginAdminByCode, sendAdminLoginCode } from "../api";
+import { loginByEmail } from "../api";
 import { InkButton } from "../components/InkButton";
 import { InkCard } from "../components/InkCard";
 import type { UserProfile } from "../types";
@@ -11,67 +11,35 @@ interface LoginPageProps {
   onAuthSuccess?: (user: UserProfile) => void;
 }
 
-const SPECIAL_ADMIN_EMAIL = "bald0wang@qq.com";
-
 export default function LoginPage({ onAuthSuccess }: LoginPageProps) {
   const navigate = useNavigate();
 
-  const [loginCode, setLoginCode] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [sendingCode, setSendingCode] = useState(false);
-  const [countdown, setCountdown] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (countdown <= 0) {
-      return;
-    }
-    const timer = window.setInterval(() => {
-      setCountdown((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-    return () => window.clearInterval(timer);
-  }, [countdown]);
-
-  const handleSendCode = async () => {
-    setError(null);
-    setMessage(null);
-    setSendingCode(true);
-    try {
-      const res = await sendAdminLoginCode({ email: SPECIAL_ADMIN_EMAIL });
-      const expireMinutes = res.data?.expire_minutes || 10;
-      setMessage(`验证码已发送至 ${SPECIAL_ADMIN_EMAIL}，请在 ${expireMinutes} 分钟内完成登录。`);
-      setCountdown(60);
-    } catch (err) {
-      const apiMessage = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setError(apiMessage || (err instanceof Error ? err.message : "发送验证码失败，请稍后重试。"));
-    } finally {
-      setSendingCode(false);
-    }
-  };
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
-    setMessage(null);
 
-    if (!loginCode.trim()) {
-      setError("请输入验证码。");
+    if (!email.trim() || !password.trim()) {
+      setError("请输入邮箱和密码。");
       return;
     }
 
     setLoading(true);
     try {
-      const res = await loginAdminByCode({
-        email: SPECIAL_ADMIN_EMAIL,
-        login_code: loginCode.trim(),
+      const res = await loginByEmail({
+        email: email.trim(),
+        password: password.trim(),
       });
       if (!res.data) {
         throw new Error("登录失败");
       }
       setAuthData(res.data.token, res.data.user);
       onAuthSuccess?.(res.data.user);
-      navigate("/admin", { replace: true });
+      navigate(res.data.user.role === "admin" ? "/admin/dashboard" : "/oracle", { replace: true });
     } catch (err) {
       const apiMessage = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setError(apiMessage || (err instanceof Error ? err.message : "登录失败，请稍后重试。"));
@@ -82,45 +50,42 @@ export default function LoginPage({ onAuthSuccess }: LoginPageProps) {
 
   return (
     <div className="auth-page fade-in">
-      <InkCard title="后台专用登录" icon="管">
+      <InkCard title="用户登录" icon="登">
         <form className="stack" onSubmit={onSubmit}>
           <div className="field">
-            <label className="field__label" htmlFor="login-email">特殊账号邮箱</label>
+            <label className="field__label" htmlFor="login-email">邮箱</label>
             <input
               id="login-email"
               type="email"
-              value={SPECIAL_ADMIN_EMAIL}
-              readOnly
+              autoComplete="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="you@example.com"
             />
-            <p className="field__hint">后台仅允许该邮箱通过验证码登录。</p>
           </div>
 
           <div className="field">
-            <label className="field__label" htmlFor="login-code">邮箱验证码</label>
+            <label className="field__label" htmlFor="login-password">密码</label>
             <input
-              id="login-code"
-              type="text"
-              value={loginCode}
-              onChange={(event) => setLoginCode(event.target.value)}
-              placeholder="请输入验证码"
+              id="login-password"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="请输入密码"
             />
-            <div className="actions-row">
-              <InkButton
-                type="button"
-                kind="ghost"
-                onClick={() => void handleSendCode()}
-                disabled={sendingCode || countdown > 0}
-              >
-                {sendingCode ? "发送中..." : countdown > 0 ? `${countdown}s 后重发` : "发送验证码"}
-              </InkButton>
-            </div>
           </div>
 
           {error ? <p className="error-text">{error}</p> : null}
-          {message ? <p className="success-text">{message}</p> : null}
 
           <div className="actions-row">
-            <InkButton type="submit" disabled={loading}>{loading ? "登录中..." : "验证并登录后台"}</InkButton>
+            <InkButton type="submit" disabled={loading}>{loading ? "登录中..." : "登录"}</InkButton>
+            <Link to="/register">
+              <InkButton type="button" kind="ghost">去注册</InkButton>
+            </Link>
+            <Link to="/forgot-password">
+              <InkButton type="button" kind="ghost">忘记密码</InkButton>
+            </Link>
           </div>
         </form>
       </InkCard>

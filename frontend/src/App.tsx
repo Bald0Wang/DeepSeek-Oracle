@@ -6,10 +6,12 @@ import { Layout } from "./components/Layout";
 import type { UserProfile } from "./types";
 import { clearAuthData, getAccessToken, getStoredUser, setAuthData } from "./utils/auth";
 import AdminDashboardPage from "./pages/AdminDashboard";
+import AdminLoginPage from "./pages/AdminLogin";
 import DetailPage from "./pages/Detail";
 import ForgotPasswordPage from "./pages/ForgotPassword";
 import HistoryPage from "./pages/History";
 import HomePage from "./pages/Home";
+import InsightsPage from "./pages/Insights";
 import LoginPage from "./pages/Login";
 import LoadingPage from "./pages/Loading";
 import OracleChatPage from "./pages/OracleChat";
@@ -47,7 +49,7 @@ function RequireAdmin({ authReady, user }: GuardProps) {
     return <LoadingGate />;
   }
   if (!currentUser) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/admin" replace />;
   }
   if (currentUser.role !== "admin") {
     return <Navigate to="/oracle" replace />;
@@ -61,7 +63,7 @@ function PublicOnly({ authReady, user }: GuardProps) {
     return <LoadingGate />;
   }
   if (currentUser) {
-    return <Navigate to={currentUser.role === "admin" ? "/admin" : "/oracle"} replace />;
+    return <Navigate to={currentUser.role === "admin" ? "/admin/dashboard" : "/oracle"} replace />;
   }
   return <Outlet />;
 }
@@ -137,6 +139,7 @@ export default function App() {
       <Routes>
         <Route element={<Layout user={activeUser} authReady={authReady} onLogout={handleLogout} />}>
           <Route element={<PublicOnly authReady={authReady} user={activeUser} />}>
+            <Route path="/admin" element={<AdminLoginPage onAuthSuccess={handleAuthSuccess} />} />
             <Route path="/login" element={<LoginPage onAuthSuccess={handleAuthSuccess} />} />
             <Route path="/register" element={<RegisterPage onAuthSuccess={handleAuthSuccess} />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -149,17 +152,18 @@ export default function App() {
             <Route path="/result/:id" element={<ResultPage />} />
             <Route path="/result/:id/:type" element={<DetailPage />} />
             <Route path="/history" element={<HistoryPage />} />
+            <Route path="/insights" element={<InsightsPage />} />
           </Route>
 
           <Route element={<RequireAdmin authReady={authReady} user={activeUser} />}>
-            <Route path="/admin" element={<AdminDashboardPage />} />
+            <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
           </Route>
 
           <Route
             path="*"
             element={
               <Navigate
-                to={activeUser ? (activeUser.role === "admin" ? "/admin" : "/") : "/login"}
+                to={activeUser ? (activeUser.role === "admin" ? "/admin/dashboard" : "/") : "/login"}
                 replace
               />
             }

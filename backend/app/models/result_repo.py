@@ -15,11 +15,16 @@ class ResultRepo:
     def __init__(self, database_path: str):
         self.database_path = database_path
 
-    def find_by_cache_key(self, cache_key: str) -> dict[str, Any] | None:
+    def find_by_cache_key(self, cache_key: str, user_id: int) -> dict[str, Any] | None:
         with db_cursor(self.database_path) as cursor:
             cursor.execute(
-                "SELECT id, created_at FROM analysis_results WHERE cache_key = ? LIMIT 1",
-                (cache_key,),
+                """
+                SELECT id, created_at
+                FROM analysis_results
+                WHERE cache_key = ? AND user_id = ?
+                LIMIT 1
+                """,
+                (cache_key, int(user_id)),
             )
             row = cursor.fetchone()
         return _row_to_dict(row)
@@ -27,6 +32,7 @@ class ResultRepo:
     def save_result(
         self,
         cache_key: str,
+        user_id: int,
         birth_info: dict[str, Any],
         text_description: str,
         provider: str,
@@ -42,6 +48,7 @@ class ResultRepo:
                     """
                     INSERT INTO analysis_results (
                       cache_key,
+                      user_id,
                       birth_info_json,
                       text_description,
                       provider,
@@ -49,10 +56,11 @@ class ResultRepo:
                       prompt_version,
                       total_execution_time,
                       total_token_count
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         cache_key,
+                        int(user_id),
                         json.dumps(birth_info, ensure_ascii=False),
                         text_description,
                         provider,
@@ -92,17 +100,28 @@ class ResultRepo:
 
             return result_id
         except sqlite3.IntegrityError:
-            cached = self.find_by_cache_key(cache_key)
+            cached = self.find_by_cache_key(cache_key, user_id)
             if cached:
                 return int(cached["id"])
             raise
 
-    def get_result(self, result_id: int) -> dict[str, Any] | None:
+    def get_result(self, result_id: int, user_id: int | None = None, is_admin: bool = False) -> dict[str, Any] | None:
         with db_cursor(self.database_path) as cursor:
-            cursor.execute(
-                "SELECT * FROM analysis_results WHERE id = ? LIMIT 1",
-                (result_id,),
-            )
+            if is_admin or user_id is None:
+                cursor.execute(
+                    "SELECT * FROM analysis_results WHERE id = ? LIMIT 1",
+                    (result_id,),
+                )
+            else:
+                cursor.execute(
+                    """
+                    SELECT *
+                    FROM analysis_results
+                    WHERE id = ? AND user_id = ?
+                    LIMIT 1
+                    """,
+                    (result_id, int(user_id)),
+                )
             result_row = cursor.fetchone()
             if not result_row:
                 return None
@@ -144,24 +163,50 @@ class ResultRepo:
             "created_at": result["created_at"],
         }
 
-    def get_history(self, page: int = 1, page_size: int = 20) -> dict[str, Any]:
+    def get_history(
+        self,
+        page: int = 1,
+        page_size: int = 20,
+        user_id: int | None = None,
+        is_admin: bool = False,
+    ) -> dict[str, Any]:
         page = max(page, 1)
         page_size = min(max(page_size, 1), 100)
         offset = (page - 1) * page_size
 
         with db_cursor(self.database_path) as cursor:
-            cursor.execute("SELECT COUNT(1) AS total FROM analysis_results")
-            total = int(cursor.fetchone()["total"])
-
-            cursor.execute(
-                """
-                SELECT id, birth_info_json, provider, model, prompt_version, created_at
-                FROM analysis_results
-                ORDER BY id DESC
-                LIMIT ? OFFSET ?
-                """,
-                (page_size, offset),
-            )
+            if is_admin or user_id is None:
+                cursor.execute("SELECT COUNT(1) AS total FROM analysis_results")
+                total = int(cursor.fetchone()["total"])
+                cursor.execute(
+                    """
+                    SELECT id, birth_info_json, provider, model, prompt_version, created_at
+                    FROM analysis_results
+                    ORDER BY id DESC
+                    LIMIT ? OFFSET ?
+                    """,
+                    (page_size, offset),
+                )
+            else:
+                cursor.execute(
+                    """
+                    SELECT COUNT(1) AS total
+                    FROM analysis_results
+                    WHERE user_id = ?
+                    """,
+                    (int(user_id),),
+                )
+                total = int(cursor.fetchone()["total"])
+                cursor.execute(
+                    """
+                    SELECT id, birth_info_json, provider, model, prompt_version, created_at
+                    FROM analysis_results
+                    WHERE user_id = ?
+                    ORDER BY id DESC
+                    LIMIT ? OFFSET ?
+                    """,
+                    (int(user_id), page_size, offset),
+                )
             rows = cursor.fetchall()
 
         items = []
@@ -194,29 +239,58 @@ class ResultRepo:
             },
         }
 
-    def get_result_item(self, result_id: int, analysis_type: str) -> dict[str, Any] | None:
+    def get_result_item(
+        self,
+        result_id: int,
+        analysis_type: str,
+        user_id: int | None = None,
+        is_admin: bool = False,
+    ) -> dict[str, Any] | None:
         with db_cursor(self.database_path) as cursor:
-            cursor.execute(
-                """
-                SELECT
-                  r.id AS result_id,
-                  r.provider,
-                  r.model,
-                  r.prompt_version,
-                  r.created_at,
-                  i.analysis_type,
-                  i.content,
-                  i.execution_time,
-                  i.input_tokens,
-                  i.output_tokens,
-                  i.token_count
-                FROM analysis_results r
-                INNER JOIN analysis_items i ON i.result_id = r.id
-                WHERE r.id = ? AND i.analysis_type = ?
-                LIMIT 1
-                """,
-                (result_id, analysis_type),
-            )
+            if is_admin or user_id is None:
+                cursor.execute(
+                    """
+                    SELECT
+                      r.id AS result_id,
+                      r.provider,
+                      r.model,
+                      r.prompt_version,
+                      r.created_at,
+                      i.analysis_type,
+                      i.content,
+                      i.execution_time,
+                      i.input_tokens,
+                      i.output_tokens,
+                      i.token_count
+                    FROM analysis_results r
+                    INNER JOIN analysis_items i ON i.result_id = r.id
+                    WHERE r.id = ? AND i.analysis_type = ?
+                    LIMIT 1
+                    """,
+                    (result_id, analysis_type),
+                )
+            else:
+                cursor.execute(
+                    """
+                    SELECT
+                      r.id AS result_id,
+                      r.provider,
+                      r.model,
+                      r.prompt_version,
+                      r.created_at,
+                      i.analysis_type,
+                      i.content,
+                      i.execution_time,
+                      i.input_tokens,
+                      i.output_tokens,
+                      i.token_count
+                    FROM analysis_results r
+                    INNER JOIN analysis_items i ON i.result_id = r.id
+                    WHERE r.id = ? AND i.analysis_type = ? AND r.user_id = ?
+                    LIMIT 1
+                    """,
+                    (result_id, analysis_type, int(user_id)),
+                )
             row = cursor.fetchone()
 
         item = _row_to_dict(row)
