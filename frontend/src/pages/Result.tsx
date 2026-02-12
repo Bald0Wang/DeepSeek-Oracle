@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
-import { exportReport, getResult } from "../api";
+import { exportReport, getInsightOverview, getResult } from "../api";
 import { ExecutionTimeChart } from "../components/ExecutionTimeChart";
 import { InkButton } from "../components/InkButton";
 import { InkCard } from "../components/InkCard";
 import { LoadingAnimation } from "../components/LoadingAnimation";
-import type { AnalysisResult } from "../types";
+import type { AnalysisResult, InsightOverviewData } from "../types";
 
 
 const ANALYSIS_CONFIG: Record<string, { label: string; desc: string }> = {
@@ -29,6 +29,8 @@ export default function ResultPage() {
   const { id = "" } = useParams();
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [insight, setInsight] = useState<InsightOverviewData | null>(null);
+  const [insightError, setInsightError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) {
@@ -42,6 +44,13 @@ export default function ResultPage() {
           throw new Error("result not found");
         }
         setResult(response.data);
+
+        try {
+          const insightRes = await getInsightOverview(Number(id));
+          setInsight(insightRes.data || null);
+        } catch (insightErr) {
+          setInsightError(insightErr instanceof Error ? insightErr.message : "获取日历与K线失败");
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "获取结果失败");
       }
@@ -135,6 +144,11 @@ export default function ResultPage() {
           <InkButton type="button" onClick={() => download("full")}>
             下载完整报告
           </InkButton>
+          <Link to="/insights">
+            <InkButton type="button" kind="ghost">
+              打开人生线/日历模块
+            </InkButton>
+          </Link>
           <Link to="/history">
             <InkButton type="button" kind="ghost">
               查看历史记录
@@ -151,6 +165,62 @@ export default function ResultPage() {
             seconds: Number(item.execution_time || 0),
           }))}
         />
+      </InkCard>
+
+      <InkCard title="近30天紫微日历">
+        {insightError ? <p className="error-text">{insightError}</p> : null}
+        {!insight ? (
+          <p className="loading-state-text">正在生成或读取日历...</p>
+        ) : (
+          <>
+            <p className="home-search__hint">
+              当前月：{insight.calendar.current_month.month_key} · 主轴：{insight.calendar.current_month.dominant_focus}
+            </p>
+            <div className="calendar-grid">
+              {insight.calendar.near_30_days.map((day) => (
+                <article key={day.date} className="calendar-day-card">
+                  <p className="calendar-day-card__date">{day.date}</p>
+                  <p className="calendar-day-card__score">{day.level} · {day.score}</p>
+                  <p className="calendar-day-card__text">宜：{day.yi.join("、")}</p>
+                  <p className="calendar-day-card__text">忌：{day.ji.join("、")}</p>
+                  <p className="calendar-day-card__text">{day.note}</p>
+                </article>
+              ))}
+            </div>
+          </>
+        )}
+      </InkCard>
+
+      <InkCard title="人生K线（每5年关键点）">
+        {!insight ? (
+          <p className="loading-state-text">正在生成或读取人生K线...</p>
+        ) : (
+          <>
+            <div className="meta-grid meta-grid--compact">
+              <div className="meta-item">
+                <div className="meta-item__label">平均分</div>
+                <div className="meta-item__value">{insight.life_kline.summary.averageScore}</div>
+              </div>
+              <div className="meta-item">
+                <div className="meta-item__label">高点年龄</div>
+                <div className="meta-item__value">{insight.life_kline.summary.bestYears.join(" / ")}</div>
+              </div>
+              <div className="meta-item">
+                <div className="meta-item__label">低点年龄</div>
+                <div className="meta-item__value">{insight.life_kline.summary.worstYears.join(" / ")}</div>
+              </div>
+            </div>
+            <p className="home-search__hint">{insight.life_kline.summary.overallTrend}</p>
+            <div className="kline-list">
+              {insight.life_kline.sparse.years.map((item) => (
+                <article key={`${item.age}-${item.year}`} className="kline-item">
+                  <p className="kline-item__title">{item.age}岁 · {item.year} · {item.yearGanZhi}</p>
+                  <p className="kline-item__meta">评分 {item.score} · {item.summary} · 大运 {item.daYun}</p>
+                </article>
+              ))}
+            </div>
+          </>
+        )}
       </InkCard>
 
       {Object.entries(result.analysis).map(([analysisType, item], idx) => {

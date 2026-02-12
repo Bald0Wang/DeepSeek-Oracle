@@ -8,6 +8,9 @@ env/
 ENV/
 .venv/
 
+.env
+.env.docker
+
 # SQLite database
 *.db
 

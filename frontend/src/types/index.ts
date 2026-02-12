@@ -242,3 +242,54 @@ export interface AdminDashboardData {
     top_paths: Array<{ path: string; total: number }>;
   };
 }
+
+export interface LifeKlineYearPoint {
+  age: number;
+  year: number;
+  yearGanZhi: string;
+  daYun: string;
+  score: number;
+  summary: string;
+  focus?: string;
+}
+
+export interface LifeKlineSummary {
+  averageScore: number;
+  bestYears: number[];
+  worstYears: number[];
+  overallTrend: string;
+}
+
+export interface MonthlyCalendarDay {
+  date: string;
+  score: number;
+  level: string;
+  focus: string;
+  yi: string[];
+  ji: string[];
+  note: string;
+}
+
+export interface MonthlyCalendarPayload {
+  month_key: string;
+  start_date: string;
+  end_date: string;
+  generated_by: string;
+  dominant_focus: string;
+  days: MonthlyCalendarDay[];
+}
+
+export interface InsightOverviewData {
+  life_kline: {
+    sparse: {
+      years: LifeKlineYearPoint[];
+    };
+    summary: LifeKlineSummary;
+    updated_at?: string;
+  };
+  calendar: {
+    current_month: MonthlyCalendarPayload;
+    next_month: MonthlyCalendarPayload;
+    near_30_days: MonthlyCalendarDay[];
+  };
+}

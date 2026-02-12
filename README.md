@@ -6,7 +6,7 @@
 
 ## 架构
 
-- `backend/`：Flask API + Redis + RQ Worker（异步任务）
+- `backend/`：Flask API + Redis + RQ Worker + Scheduler（异步任务 + 月度预计算）
 - `frontend/`：React + Vite + TypeScript（独立前端）
 - `izthon/`：Python 星盘计算库（后端直接调用，不再依赖 Node 星盘 API）
 
@@ -15,10 +15,23 @@
 - 阳历/阴历命盘生成
 - 异步分析任务（提交、轮询、重试、取消）
 - 三类分析：婚姻道路、困难挑战、伴侣性格
+- 开始分析后自动生成：近30天紫微日历 + 人生K线关键点
 - 多智能体咨询编排（安全审查 + 长短线路由 + 统一答复）
 - 历史记录查询与 Markdown 报告导出
 - 缓存命中与任务复用（避免重复推演）
 - 邮箱验证码注册与找回密码（SMTP）
+
+## 新增接口（日历与人生K线）
+
+- `GET /api/insights/overview?result_id=<id>`
+
+返回：
+
+- `life_kline.sparse.years`（每5年关键点）
+- `life_kline.summary`
+- `calendar.current_month`
+- `calendar.next_month`
+- `calendar.near_30_days`
 
 ## 新增接口（多智能体咨询）
 
@@ -87,7 +100,7 @@ npm run dev
 
 ## Docker 一键启动
 
-项目已提供完整容器编排：`frontend + backend + worker + redis`。
+项目已提供完整容器编排：`frontend + backend + worker + scheduler + redis`。
 
 ### 推荐：脚本一键启动（Windows / PowerShell）
 

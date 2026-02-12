@@ -7,6 +7,7 @@ SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS analysis_tasks (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   task_id TEXT NOT NULL UNIQUE,
+  user_id INTEGER,
   status TEXT NOT NULL,
   progress INTEGER NOT NULL DEFAULT 0,
   step TEXT,
@@ -33,6 +34,7 @@ ON analysis_tasks(status, created_at DESC);
 CREATE TABLE IF NOT EXISTS analysis_results (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   cache_key TEXT NOT NULL UNIQUE,
+  user_id INTEGER,
   birth_info_json TEXT NOT NULL,
   text_description TEXT NOT NULL,
   provider TEXT NOT NULL,
@@ -104,6 +106,45 @@ CREATE TABLE IF NOT EXISTS email_verification_codes (
 
 CREATE INDEX IF NOT EXISTS idx_email_codes_lookup
 ON email_verification_codes(email, purpose, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS life_kline_profiles (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  source_result_id INTEGER,
+  birth_info_json TEXT NOT NULL,
+  sparse_json TEXT NOT NULL,
+  kline_json TEXT NOT NULL,
+  summary_json TEXT NOT NULL,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_life_kline_user_updated
+ON life_kline_profiles(user_id, updated_at DESC);
+
+CREATE TABLE IF NOT EXISTS monthly_calendars (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  month_key TEXT NOT NULL,
+  source_result_id INTEGER,
+  birth_info_json TEXT NOT NULL,
+  calendar_json TEXT NOT NULL,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(user_id, month_key)
+);
+
+CREATE INDEX IF NOT EXISTS idx_monthly_calendar_user_month
+ON monthly_calendars(user_id, month_key);
+
+CREATE TABLE IF NOT EXISTS scheduler_runs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  job_name TEXT NOT NULL,
+  run_key TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(job_name, run_key)
+);
 """
 
 
@@ -118,7 +159,107 @@ def init_db(database_path: str) -> None:
     Path(database_path).parent.mkdir(parents=True, exist_ok=True)
     with get_connection(database_path) as conn:
         conn.executescript(SCHEMA_SQL)
+        _migrate_user_scope_columns(conn)
+        _migrate_insight_tables(conn)
         conn.commit()
+
+
+def _has_column(conn: sqlite3.Connection, table: str, column: str) -> bool:
+    cursor = conn.execute(f"PRAGMA table_info({table})")
+    return any(str(row["name"]) == column for row in cursor.fetchall())
+
+
+def _migrate_user_scope_columns(conn: sqlite3.Connection) -> None:
+    if not _has_column(conn, "analysis_tasks", "user_id"):
+        conn.execute("ALTER TABLE analysis_tasks ADD COLUMN user_id INTEGER")
+    if not _has_column(conn, "analysis_results", "user_id"):
+        conn.execute("ALTER TABLE analysis_results ADD COLUMN user_id INTEGER")
+
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_tasks_user_created_at
+        ON analysis_tasks(user_id, created_at DESC)
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_results_user_created_at
+        ON analysis_results(user_id, created_at DESC)
+        """
+    )
+
+    # Backfill result ownership when task ownership is available.
+    conn.execute(
+        """
+        UPDATE analysis_results
+        SET user_id = (
+          SELECT t.user_id
+          FROM analysis_tasks t
+          WHERE t.result_id = analysis_results.id
+            AND t.user_id IS NOT NULL
+          ORDER BY t.id DESC
+          LIMIT 1
+        )
+        WHERE user_id IS NULL
+        """
+    )
+
+
+def _migrate_insight_tables(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS life_kline_profiles (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER NOT NULL,
+          source_result_id INTEGER,
+          birth_info_json TEXT NOT NULL,
+          sparse_json TEXT NOT NULL,
+          kline_json TEXT NOT NULL,
+          summary_json TEXT NOT NULL,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(user_id)
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS monthly_calendars (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER NOT NULL,
+          month_key TEXT NOT NULL,
+          source_result_id INTEGER,
+          birth_info_json TEXT NOT NULL,
+          calendar_json TEXT NOT NULL,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(user_id, month_key)
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS scheduler_runs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          job_name TEXT NOT NULL,
+          run_key TEXT NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(job_name, run_key)
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_life_kline_user_updated
+        ON life_kline_profiles(user_id, updated_at DESC)
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_monthly_calendar_user_month
+        ON monthly_calendars(user_id, month_key)
+        """
+    )
 
 
 @contextmanager

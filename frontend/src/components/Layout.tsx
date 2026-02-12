@@ -18,6 +18,7 @@ export function Layout({ user, authReady, onLogout }: LayoutProps) {
   const navigate = useNavigate();
   const isHome = location.pathname === "/";
   const isPublicRoute = location.pathname === "/login"
+    || location.pathname === "/admin"
     || location.pathname === "/register"
     || location.pathname === "/forgot-password";
 
@@ -44,7 +45,7 @@ export function Layout({ user, authReady, onLogout }: LayoutProps) {
     setIsLoggingOut(true);
     try {
       await onLogout();
-      navigate("/login", { replace: true });
+      navigate(user?.role === "admin" ? "/admin" : "/login", { replace: true });
     } finally {
       setIsLoggingOut(false);
     }
@@ -77,15 +78,18 @@ export function Layout({ user, authReady, onLogout }: LayoutProps) {
               <NavLink to="/history" className={({ isActive }) => isActive ? "active" : ""}>
                 历史记录
               </NavLink>
+              <NavLink to="/insights" className={({ isActive }) => isActive ? "active" : ""}>
+                人生线/日历
+              </NavLink>
               {user.role === "admin" ? (
-                <NavLink to="/admin" className={({ isActive }) => isActive ? "active" : ""}>
+                <NavLink to="/admin/dashboard" className={({ isActive }) => isActive ? "active" : ""}>
                   管理后台
                 </NavLink>
               ) : null}
             </>
           ) : (
             <NavLink to="/login" className={({ isActive }) => isActive ? "active" : ""}>
-              后台登录
+              用户登录
             </NavLink>
           )}
         </nav>

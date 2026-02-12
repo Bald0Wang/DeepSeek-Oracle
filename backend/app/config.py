@@ -72,3 +72,6 @@ class Config:
     QWEN_BASE_URL = os.getenv(
         "QWEN_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1"
     )
+
+    CALENDAR_PRECOMPUTE_DAY = int(os.getenv("CALENDAR_PRECOMPUTE_DAY", "15"))
+    SCHEDULER_POLL_SECONDS = int(os.getenv("SCHEDULER_POLL_SECONDS", "3600"))

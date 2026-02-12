@@ -60,6 +60,8 @@ services:
       ZHIPU_API_KEY: "${ZHIPU_API_KEY:-}"
       QWEN_API_KEY: "${QWEN_API_KEY:-}"
       QWEN_BASE_URL: "${QWEN_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}"
+      CALENDAR_PRECOMPUTE_DAY: "${CALENDAR_PRECOMPUTE_DAY:-15}"
+      SCHEDULER_POLL_SECONDS: "${SCHEDULER_POLL_SECONDS:-3600}"
     ports:
       - "${BACKEND_PORT:-5000}:5000"
     volumes:
@@ -123,6 +125,65 @@ services:
       ZHIPU_API_KEY: "${ZHIPU_API_KEY:-}"
       QWEN_API_KEY: "${QWEN_API_KEY:-}"
       QWEN_BASE_URL: "${QWEN_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}"
+      CALENDAR_PRECOMPUTE_DAY: "${CALENDAR_PRECOMPUTE_DAY:-15}"
+      SCHEDULER_POLL_SECONDS: "${SCHEDULER_POLL_SECONDS:-3600}"
+    volumes:
+      - backend_data:/app/data
+      - "${IZTHON_SRC_PATH_HOST:-../izthon/src}:/opt/izthon/src:ro"
+
+  scheduler:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: deepseek-oracle-scheduler
+    restart: unless-stopped
+    command: ["python", "scheduler.py"]
+    depends_on:
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    environment:
+      DEBUG: "${BACKEND_DEBUG:-false}"
+      SECRET_KEY: "${SECRET_KEY:-change-me}"
+      CORS_ORIGINS: "${CORS_ORIGINS:-http://localhost:8080,http://127.0.0.1:8080}"
+      DATABASE_PATH: "/app/data/data.db"
+      REDIS_URL: "redis://redis:6379/0"
+      ANALYSIS_QUEUE: "${ANALYSIS_QUEUE:-analysis}"
+      IZTHON_SRC_PATH: "/opt/izthon/src"
+      REQUEST_TIMEOUT_S: "${REQUEST_TIMEOUT_S:-1800}"
+      MAX_TASK_RETRY: "${MAX_TASK_RETRY:-2}"
+      LLM_MAX_RETRIES: "${LLM_MAX_RETRIES:-2}"
+      ORACLE_EAST_ONLY_MVP: "${ORACLE_EAST_ONLY_MVP:-true}"
+      AUTH_TOKEN_EXPIRE_HOURS: "${AUTH_TOKEN_EXPIRE_HOURS:-72}"
+      INVITE_ONLY: "${INVITE_ONLY:-false}"
+      INVITE_CODES: "${INVITE_CODES:-}"
+      ADMIN_EMAILS: "${ADMIN_EMAILS:-}"
+      SPECIAL_ADMIN_EMAIL: "${SPECIAL_ADMIN_EMAIL:-bald0wang@qq.com}"
+      EMAIL_VERIFY_REQUIRED: "${EMAIL_VERIFY_REQUIRED:-true}"
+      EMAIL_CODE_EXPIRE_MINUTES: "${EMAIL_CODE_EXPIRE_MINUTES:-10}"
+      SMTP_HOST: "${SMTP_HOST:-}"
+      SMTP_PORT: "${SMTP_PORT:-465}"
+      SMTP_USE_SSL: "${SMTP_USE_SSL:-true}"
+      SMTP_USERNAME: "${SMTP_USERNAME:-}"
+      SMTP_PASSWORD: "${SMTP_PASSWORD:-}"
+      SMTP_FROM_EMAIL: "${SMTP_FROM_EMAIL:-}"
+      SMTP_FROM_NAME: "${SMTP_FROM_NAME:-DeepSeek Oracle}"
+      SMTP_TIMEOUT_S: "${SMTP_TIMEOUT_S:-20}"
+      LLM_PROVIDER: "${LLM_PROVIDER:-volcano}"
+      LLM_MODEL: "${LLM_MODEL:-doubao-seed-1-8-251228}"
+      PROMPT_VERSION: "${PROMPT_VERSION:-v1}"
+      ARK_API_KEY: "${ARK_API_KEY:-}"
+      ARK_API_MODEL: "${ARK_API_MODEL:-}"
+      DEEPSEEK_API_KEY: "${DEEPSEEK_API_KEY:-}"
+      DEEPSEEK_BASE_URL: "${DEEPSEEK_BASE_URL:-https://api.deepseek.com/v1}"
+      ALIYUN_API_KEY: "${ALIYUN_API_KEY:-}"
+      ALIYUN_BASE_URL: "${ALIYUN_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}"
+      ZHIPU_API_KEY: "${ZHIPU_API_KEY:-}"
+      QWEN_API_KEY: "${QWEN_API_KEY:-}"
+      QWEN_BASE_URL: "${QWEN_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}"
+      CALENDAR_PRECOMPUTE_DAY: "${CALENDAR_PRECOMPUTE_DAY:-15}"
+      SCHEDULER_POLL_SECONDS: "${SCHEDULER_POLL_SECONDS:-3600}"
     volumes:
       - backend_data:/app/data
       - "${IZTHON_SRC_PATH_HOST:-../izthon/src}:/opt/izthon/src:ro"

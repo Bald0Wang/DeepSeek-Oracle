@@ -1,13 +1,9 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { InkButton } from "../components/InkButton";
 import { useAnalysis } from "../hooks/useAnalysis";
 import type { BirthInfo } from "../types";
-
-
-const INPUT_FORMAT_HINT = "农历(或者阳历)2000年1月1日00:01男";
-
 
 const pad2 = (value: number) => String(value).padStart(2, "0");
 
@@ -21,97 +17,82 @@ const hourToTimezone = (hour: number) => {
   return Math.floor((hour + 1) / 2);
 };
 
-const parseBirthInput = (rawInput: string): BirthInfo => {
-  const input = rawInput.replace(/\s+/g, "").replace(/（/g, "(").replace(/）/g, ")").trim();
-
-  if (!input) {
-    throw new Error("请输入出生信息");
-  }
-
-  let calendar: BirthInfo["calendar"] | null = null;
-  if (/农历|阴历|lunar/i.test(input)) {
-    calendar = "lunar";
-  } else if (/阳历|公历|solar/i.test(input)) {
-    calendar = "solar";
-  }
-
-  if (!calendar) {
-    throw new Error("请标注农历或阳历");
-  }
-
-  const genderMatches = input.match(/男|女/g);
-  const gender =
-    genderMatches && genderMatches.length > 0
-      ? (genderMatches[genderMatches.length - 1] as BirthInfo["gender"])
-      : undefined;
-  if (!gender) {
-    throw new Error("请在末尾补充性别（男/女）");
-  }
-
-  const dateMatch = input.match(/(\d{4})年(\d{1,2})月(\d{1,2})日?/);
-  if (!dateMatch) {
-    throw new Error(`格式错误，请使用：${INPUT_FORMAT_HINT}`);
-  }
-
-  const year = Number(dateMatch[1]);
-  const month = Number(dateMatch[2]);
-  const day = Number(dateMatch[3]);
-
-  if (month < 1 || month > 12) {
-    throw new Error("月份范围应为 1-12");
-  }
-
-  if (calendar === "lunar") {
-    if (day < 1 || day > 30) {
-      throw new Error("农历日期范围应为 1-30");
-    }
-  } else {
-    const temp = new Date(year, month - 1, day);
-    const isValidSolarDate =
-      temp.getFullYear() === year && temp.getMonth() === month - 1 && temp.getDate() === day;
-    if (!isValidSolarDate) {
-      throw new Error("阳历日期无效，请检查年月日");
-    }
-  }
-
-  const timeMatch = input.match(/(\d{1,2})[:：](\d{1,2})/);
-  if (!timeMatch) {
-    throw new Error("请补充时间，例如 00:01");
-  }
-
-  const hour = Number(timeMatch[1]);
-  const minute = Number(timeMatch[2]);
-  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
-    throw new Error("时间无效，请使用 24 小时制，例如 00:01");
-  }
-
-  return {
-    date: `${year}-${pad2(month)}-${pad2(day)}`,
-    timezone: hourToTimezone(hour),
-    gender,
-    calendar,
-  };
-};
-
 
 export default function HomePage() {
   const navigate = useNavigate();
   const { submit, isSubmitting, error } = useAnalysis();
 
-  const [query, setQuery] = useState("");
+  const [calendar, setCalendar] = useState<BirthInfo["calendar"]>("lunar");
+  const [year, setYear] = useState("2000");
+  const [month, setMonth] = useState("1");
+  const [day, setDay] = useState("1");
+  const [hour, setHour] = useState("0");
+  const [minute, setMinute] = useState("1");
+  const [gender, setGender] = useState<BirthInfo["gender"]>("男");
   const [localError, setLocalError] = useState<string | null>(null);
+
+  const inputPreview = useMemo(() => {
+    const y = Number(year) || 0;
+    const m = Number(month) || 0;
+    const d = Number(day) || 0;
+    const h = Number(hour) || 0;
+    const min = Number(minute) || 0;
+    return `${calendar === "lunar" ? "阴历" : "阳历"} ${y}年${m}月${d}日 ${pad2(h)}:${pad2(min)} ${gender}`;
+  }, [calendar, day, gender, hour, minute, month, year]);
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLocalError(null);
 
-    let birthInfo: BirthInfo;
-    try {
-      birthInfo = parseBirthInput(query);
-    } catch (parseError) {
-      setLocalError(parseError instanceof Error ? parseError.message : "输入格式错误");
+    const yearNumber = Number(year);
+    const monthNumber = Number(month);
+    const dayNumber = Number(day);
+    const hourNumber = Number(hour);
+    const minuteNumber = Number(minute);
+
+    if ([yearNumber, monthNumber, dayNumber, hourNumber, minuteNumber].some((value) => Number.isNaN(value))) {
+      setLocalError("请完整填写出生年月日和时间。");
       return;
     }
+
+    if (yearNumber < 1900 || yearNumber > 2100) {
+      setLocalError("年份范围建议在 1900-2100。");
+      return;
+    }
+
+    if (monthNumber < 1 || monthNumber > 12) {
+      setLocalError("月份范围应为 1-12。");
+      return;
+    }
+
+    if (calendar === "lunar") {
+      if (dayNumber < 1 || dayNumber > 30) {
+        setLocalError("阴历日期范围应为 1-30。");
+        return;
+      }
+    } else {
+      const temp = new Date(yearNumber, monthNumber - 1, dayNumber);
+      const isValidSolarDate =
+        temp.getFullYear() === yearNumber
+        && temp.getMonth() === monthNumber - 1
+        && temp.getDate() === dayNumber;
+      if (!isValidSolarDate) {
+        setLocalError("阳历日期无效，请检查年月日。");
+        return;
+      }
+    }
+
+    if (hourNumber < 0 || hourNumber > 23 || minuteNumber < 0 || minuteNumber > 59) {
+      setLocalError("时间无效，请使用 24 小时制。");
+      return;
+    }
+
+    const birthInfo: BirthInfo = {
+      date: `${yearNumber}-${pad2(monthNumber)}-${pad2(dayNumber)}`,
+      timezone: hourToTimezone(hourNumber),
+      gender,
+      calendar,
+    };
 
     try {
       const data = await submit(birthInfo);
@@ -134,25 +115,99 @@ export default function HomePage() {
       <form className="home-search__form fade-in-up" onSubmit={onSubmit}>
         <div className="home-search__intro">
           <p className="home-search__title">东方命盘分析入口</p>
-          <p className="home-search__desc">用于生成紫微命盘与三类专项解读；若你想直接提问近期问题，请使用咨询对话。</p>
+          <p className="home-search__desc">按表单选择出生信息，必须先选择阴历/阳历，再开始分析。</p>
         </div>
 
-        <div className="home-search__row">
-          <input
-            className="home-search__input"
-            type="text"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder={INPUT_FORMAT_HINT}
-            aria-label="输入出生信息"
-          />
+        <div className="form-grid">
+          <div className="field">
+            <label className="field__label" htmlFor="calendar">历法</label>
+            <select id="calendar" value={calendar} onChange={(event) => setCalendar(event.target.value as BirthInfo["calendar"])}>
+              <option value="lunar">阴历（农历）</option>
+              <option value="solar">阳历（公历）</option>
+            </select>
+          </div>
+          <div className="field">
+            <label className="field__label" htmlFor="gender">性别</label>
+            <select id="gender" value={gender} onChange={(event) => setGender(event.target.value as BirthInfo["gender"])}>
+              <option value="男">男</option>
+              <option value="女">女</option>
+            </select>
+          </div>
+          <div className="field">
+            <label className="field__label" htmlFor="birth-year">出生年</label>
+            <input
+              id="birth-year"
+              type="number"
+              inputMode="numeric"
+              min={1900}
+              max={2100}
+              value={year}
+              onChange={(event) => setYear(event.target.value)}
+              placeholder="2000"
+            />
+          </div>
+          <div className="field">
+            <label className="field__label" htmlFor="birth-month">出生月</label>
+            <input
+              id="birth-month"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={12}
+              value={month}
+              onChange={(event) => setMonth(event.target.value)}
+              placeholder="1-12"
+            />
+          </div>
+          <div className="field">
+            <label className="field__label" htmlFor="birth-day">出生日</label>
+            <input
+              id="birth-day"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={calendar === "lunar" ? 30 : 31}
+              value={day}
+              onChange={(event) => setDay(event.target.value)}
+              placeholder={calendar === "lunar" ? "1-30" : "1-31"}
+            />
+          </div>
+          <div className="field">
+            <label className="field__label" htmlFor="birth-hour">出生时（24小时）</label>
+            <input
+              id="birth-hour"
+              type="number"
+              inputMode="numeric"
+              min={0}
+              max={23}
+              value={hour}
+              onChange={(event) => setHour(event.target.value)}
+              placeholder="0-23"
+            />
+          </div>
+          <div className="field">
+            <label className="field__label" htmlFor="birth-minute">出生分</label>
+            <input
+              id="birth-minute"
+              type="number"
+              inputMode="numeric"
+              min={0}
+              max={59}
+              value={minute}
+              onChange={(event) => setMinute(event.target.value)}
+              placeholder="0-59"
+            />
+          </div>
+        </div>
+
+        <div className="actions-row actions-row--center">
           <InkButton className="home-search__submit" type="submit" disabled={isSubmitting}>
             {isSubmitting ? "分析中..." : "开始分析"}
           </InkButton>
         </div>
 
         <div className="home-search__meta">
-          <p className="home-search__hint">格式：{INPUT_FORMAT_HINT}</p>
+          <p className="home-search__hint">当前输入：{inputPreview}</p>
           <Link to="/oracle" className="home-search__quick-link">转到咨询对话</Link>
         </div>
 

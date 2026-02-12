@@ -1,4 +1,4 @@
-from flask import Blueprint, request
+from flask import Blueprint, g, request
 
 from app.services import get_analysis_service
 from app.utils.auth import require_auth
@@ -19,7 +19,13 @@ def get_history():
         raise validation_error("page", "page and page_size must be integer") from exc
 
     service = get_analysis_service()
-    data = service.get_history(page=page, page_size=page_size)
+    current_user = getattr(g, "current_user", None) or {}
+    data = service.get_history(
+        page=page,
+        page_size=page_size,
+        user_id=int(current_user.get("id", 0)),
+        is_admin=str(current_user.get("role", "")) == "admin",
+    )
     return success_response(data=data)
 
 
@@ -27,7 +33,12 @@ def get_history():
 @require_auth()
 def get_result(result_id: int):
     service = get_analysis_service()
-    data = service.get_result(result_id)
+    current_user = getattr(g, "current_user", None) or {}
+    data = service.get_result(
+        result_id,
+        user_id=int(current_user.get("id", 0)),
+        is_admin=str(current_user.get("role", "")) == "admin",
+    )
     return success_response(data=data)
 
 
@@ -35,5 +46,11 @@ def get_result(result_id: int):
 @require_auth()
 def get_result_item(result_id: int, analysis_type: str):
     service = get_analysis_service()
-    data = service.get_result_item(result_id=result_id, analysis_type=analysis_type)
+    current_user = getattr(g, "current_user", None) or {}
+    data = service.get_result_item(
+        result_id=result_id,
+        analysis_type=analysis_type,
+        user_id=int(current_user.get("id", 0)),
+        is_admin=str(current_user.get("role", "")) == "admin",
+    )
     return success_response(data=data)
