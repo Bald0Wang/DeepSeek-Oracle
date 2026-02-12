@@ -9,3 +9,8 @@ class QwenProvider(DeepSeekProvider):
         result = super().generate(user_message, timeout_s)
         result.provider = "qwen"
         return result
+
+    def chat_with_tools(self, messages: list[dict], tools: list[dict], timeout_s: int = 1800):
+        result = super().chat_with_tools(messages=messages, tools=tools, timeout_s=timeout_s)
+        result.provider = "qwen"
+        return result

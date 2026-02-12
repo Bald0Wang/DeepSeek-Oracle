@@ -16,6 +16,7 @@ import type {
   InsightOverviewData,
   OracleChatRequest,
   OracleChatResponse,
+  OracleStreamEvent,
   ResetPasswordRequest,
   SubmitAnalysisData,
   SystemLogResponse,
@@ -91,6 +92,150 @@ export const exportReport = async (id: number, scope = "full") =>
 
 export const oracleChat = async (payload: OracleChatRequest) =>
   unwrap(await api.post<ApiResponse<OracleChatResponse>>("/oracle/chat", payload));
+
+export const oracleChatStream = async (
+  payload: OracleChatRequest,
+  onEvent: (event: OracleStreamEvent) => void
+): Promise<OracleChatResponse> => {
+  const token = getAccessToken();
+  const response = await fetch("/api/oracle/chat/stream", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error(`stream request failed (${response.status})`);
+  }
+
+  if (!response.body) {
+    throw new Error("stream response body is empty");
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder("utf-8");
+  let buffer = "";
+  let finalData: OracleChatResponse | null = null;
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) {
+      break;
+    }
+    buffer += decoder.decode(value, { stream: true });
+
+    while (true) {
+      const separatorIndex = buffer.indexOf("\n\n");
+      if (separatorIndex === -1) {
+        break;
+      }
+      const chunk = buffer.slice(0, separatorIndex);
+      buffer = buffer.slice(separatorIndex + 2);
+
+      const lines = chunk.split("\n");
+      let eventName = "";
+      let dataText = "";
+      for (const line of lines) {
+        if (line.startsWith("event:")) {
+          eventName = line.slice(6).trim();
+        } else if (line.startsWith("data:")) {
+          dataText += line.slice(5).trim();
+        }
+      }
+      if (!eventName) {
+        continue;
+      }
+
+      let parsedData: Record<string, unknown> = {};
+      if (dataText) {
+        try {
+          parsedData = JSON.parse(dataText) as Record<string, unknown>;
+        } catch {
+          parsedData = {};
+        }
+      }
+
+      if (eventName === "session_start") {
+        onEvent({
+          event: "session_start",
+          data: {
+            provider: String(parsedData.provider || ""),
+            model: String(parsedData.model || ""),
+          },
+        });
+        continue;
+      }
+      if (eventName === "tool_start") {
+        onEvent({
+          event: "tool_start",
+          data: {
+            tool_name: String(parsedData.tool_name || ""),
+            display_name: String(parsedData.display_name || ""),
+          },
+        });
+        continue;
+      }
+      if (eventName === "tool_end") {
+        onEvent({
+          event: "tool_end",
+          data: {
+            tool_name: String(parsedData.tool_name || ""),
+            display_name: String(parsedData.display_name || ""),
+            status: "success",
+            elapsed_ms:
+              typeof parsedData.elapsed_ms === "number" ? parsedData.elapsed_ms : undefined,
+          },
+        });
+        continue;
+      }
+      if (eventName === "tool_error") {
+        onEvent({
+          event: "tool_error",
+          data: {
+            tool_name: String(parsedData.tool_name || ""),
+            display_name: String(parsedData.display_name || ""),
+            elapsed_ms:
+              typeof parsedData.elapsed_ms === "number" ? parsedData.elapsed_ms : undefined,
+          },
+        });
+        continue;
+      }
+      if (eventName === "final") {
+        const data = parsedData as unknown as OracleChatResponse;
+        finalData = data;
+        onEvent({
+          event: "final",
+          data: {
+            answer_text: data.answer_text,
+            follow_up_questions: data.follow_up_questions,
+            action_items: data.action_items,
+            safety_disclaimer_level: data.safety_disclaimer_level,
+          },
+        });
+        continue;
+      }
+      if (eventName === "error") {
+        const message = String(parsedData.message || "stream error");
+        onEvent({ event: "error", data: { message } });
+        throw new Error(message);
+      }
+      if (eventName === "done") {
+        onEvent({ event: "done", data: {} });
+        if (finalData) {
+          return finalData;
+        }
+      }
+    }
+  }
+
+  if (finalData) {
+    return finalData;
+  }
+  throw new Error("stream ended without final result");
+};
 
 export const registerByEmail = async (payload: AuthRequest) =>
   unwrap(await api.post<ApiResponse<AuthPayload>>("/auth/register", payload));

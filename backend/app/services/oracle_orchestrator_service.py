@@ -1,19 +1,31 @@
 from __future__ import annotations
 
+import json
 import re
 import time
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Callable
 
 from flask import current_app
 
 from app.llm_providers import create_provider
+from app.llm_providers.base import UnsupportedToolCallingError
 from app.services.ziwei_service import ZiweiService
 from app.utils.errors import AppError
 
 
 ALL_MVP_SCHOOLS = ["ziwei", "meihua", "daily_card", "actionizer", "philosophy"]
 DISCLAIMER_ORDER = {"none": 0, "light": 1, "strong": 2}
+MAX_TOOL_ROUNDS = 8
+TOOL_DISPLAY_NAMES = {
+    "safety_guard_precheck": "安全预检",
+    "safety_guard_postcheck": "安全后检",
+    "ziwei_long_reading": "紫微长线工具",
+    "meihua_short_reading": "梅花短线工具",
+    "daily_card": "每日卡片工具",
+    "philosophy_guidance": "心法解读工具",
+    "actionizer": "行动化工具",
+}
 
 LONG_TERM_KEYWORDS = {
     "人生",
@@ -89,6 +101,15 @@ class RoutingResult:
     reasons: list[str]
 
 
+@dataclass
+class ToolSpec:
+    name: str
+    description: str
+    json_schema: dict[str, Any]
+    handler: Callable[[dict[str, Any], dict[str, Any], str, str], str]
+    fallback_skill: str | None = None
+
+
 class OracleOrchestratorService:
     def __init__(
         self,
@@ -105,42 +126,302 @@ class OracleOrchestratorService:
         self.llm_max_retries = llm_max_retries
         self.east_only_mvp = east_only_mvp
         self.ziwei_service = ZiweiService(izthon_src_path)
+        self.tool_registry = self._build_tool_registry()
 
     def chat(self, payload: dict[str, Any]) -> dict[str, Any]:
-        user_query = payload["user_query"]
-        selected_school = payload["selected_school"]
-        enabled_schools = self._normalize_enabled_schools(payload.get("enabled_schools"))
+        return self._run_chat(payload, event_callback=None)
+
+    def chat_stream(
+        self,
+        payload: dict[str, Any],
+        event_callback: Callable[[str, dict[str, Any]], None] | None = None,
+    ) -> dict[str, Any]:
+        return self._run_chat(payload, event_callback=event_callback)
+
+    def chat_with_tools(
+        self,
+        payload: dict[str, Any],
+        event_callback: Callable[[str, dict[str, Any]], None] | None = None,
+    ) -> dict[str, Any]:
+        return self._run_chat(payload, event_callback=event_callback)
+
+    def _run_chat(
+        self,
+        payload: dict[str, Any],
+        event_callback: Callable[[str, dict[str, Any]], None] | None,
+    ) -> dict[str, Any]:
         provider_name = payload.get("provider", self.default_provider)
         model_name = payload.get("model", self.default_model)
+        self._emit_event(event_callback, "session_start", {"provider": provider_name, "model": model_name})
 
+        try:
+            result = self._chat_with_tool_calling(
+                payload=payload,
+                provider_name=provider_name,
+                model_name=model_name,
+                event_callback=event_callback,
+            )
+        except (UnsupportedToolCallingError, AppError, RuntimeError) as exc:
+            fallback_reason = str(exc)
+            result = self._chat_with_fallback_router(
+                payload=payload,
+                provider_name=provider_name,
+                model_name=model_name,
+                event_callback=event_callback,
+                fallback_reason=fallback_reason,
+            )
+        except Exception as exc:  # pragma: no cover - defensive fallback
+            result = self._chat_with_fallback_router(
+                payload=payload,
+                provider_name=provider_name,
+                model_name=model_name,
+                event_callback=event_callback,
+                fallback_reason=str(exc),
+            )
+
+        final_payload = {
+            "answer_text": result["answer_text"],
+            "follow_up_questions": result["follow_up_questions"][:3],
+            "action_items": result["action_items"][:5],
+            "safety_disclaimer_level": result["safety_disclaimer_level"],
+            "tool_events": result.get("tool_events", []),
+            "trace": result.get("trace", []),
+        }
+        self._emit_event(
+            event_callback,
+            "final",
+            {
+                "answer_text": final_payload["answer_text"],
+                "follow_up_questions": final_payload["follow_up_questions"],
+                "action_items": final_payload["action_items"],
+                "safety_disclaimer_level": final_payload["safety_disclaimer_level"],
+            },
+        )
+        self._emit_event(event_callback, "done", {})
+        return final_payload
+
+    def _chat_with_tool_calling(
+        self,
+        payload: dict[str, Any],
+        provider_name: str,
+        model_name: str,
+        event_callback: Callable[[str, dict[str, Any]], None] | None,
+    ) -> dict[str, Any]:
+        user_query = payload["user_query"]
+        tool_events: list[dict[str, Any]] = []
+        trace: list[dict[str, Any]] = []
+
+        pre_start = time.perf_counter()
         pre_check = self._safety_check(user_query)
+        pre_elapsed = int((time.perf_counter() - pre_start) * 1000)
+        self._append_tool_event(
+            tool_events=tool_events,
+            event_callback=event_callback,
+            tool_name="safety_guard_precheck",
+            status="success",
+            elapsed_ms=pre_elapsed,
+            source="tool_calling",
+        )
+        trace.append({"stage": "pre_safety", "result": pre_check.as_dict()})
+
+        if pre_check.decision == "refuse":
+            refusal = self._build_refusal_payload(pre_check, trace)
+            refusal["tool_events"] = tool_events
+            return refusal
+
+        provider = create_provider(provider_name, model_name)
+        messages = self._build_orchestrator_messages(payload)
+        tools = self._build_tools_for_provider()
+        specialist_outputs: dict[str, str] = {}
+
+        answer_text = ""
+        reached_final = False
+        for _ in range(MAX_TOOL_ROUNDS):
+            tool_result = provider.chat_with_tools(
+                messages=messages,
+                tools=tools,
+                timeout_s=self.request_timeout_s,
+            )
+
+            if tool_result.tool_calls:
+                assistant_tool_calls: list[dict[str, Any]] = []
+                for tool_call in tool_result.tool_calls:
+                    assistant_tool_calls.append(
+                        {
+                            "id": tool_call.id,
+                            "type": "function",
+                            "function": {
+                                "name": tool_call.name,
+                                "arguments": json.dumps(tool_call.arguments, ensure_ascii=False),
+                            },
+                        }
+                    )
+                messages.append({"role": "assistant", "content": tool_result.content or "", "tool_calls": assistant_tool_calls})
+
+                for tool_call in tool_result.tool_calls:
+                    spec = self.tool_registry.get(tool_call.name)
+                    if not spec:
+                        continue
+                    started_at = time.perf_counter()
+                    self._append_tool_event(
+                        tool_events=tool_events,
+                        event_callback=event_callback,
+                        tool_name=spec.name,
+                        status="running",
+                        source="tool_calling",
+                    )
+                    try:
+                        parsed_args = self._validate_tool_arguments(spec, tool_call.arguments)
+                        tool_output = spec.handler(payload, parsed_args, provider_name, model_name)
+                        elapsed_ms = int((time.perf_counter() - started_at) * 1000)
+                        specialist_outputs[spec.name] = tool_output
+                        self._append_tool_event(
+                            tool_events=tool_events,
+                            event_callback=event_callback,
+                            tool_name=spec.name,
+                            status="success",
+                            elapsed_ms=elapsed_ms,
+                            source="tool_calling",
+                        )
+                        messages.append(
+                            {
+                                "role": "tool",
+                                "tool_call_id": tool_call.id,
+                                "name": spec.name,
+                                "content": tool_output,
+                            }
+                        )
+                    except Exception as exc:
+                        elapsed_ms = int((time.perf_counter() - started_at) * 1000)
+                        self._append_tool_event(
+                            tool_events=tool_events,
+                            event_callback=event_callback,
+                            tool_name=spec.name,
+                            status="error",
+                            elapsed_ms=elapsed_ms,
+                            source="tool_calling",
+                        )
+                        messages.append(
+                            {
+                                "role": "tool",
+                                "tool_call_id": tool_call.id,
+                                "name": spec.name,
+                                "content": f"tool error: {exc}",
+                            }
+                        )
+                continue
+
+            answer_text = (tool_result.content or "").strip()
+            if answer_text:
+                reached_final = True
+                break
+
+        if not reached_final:
+            raise RuntimeError("tool-calling round limit reached")
+
+        intent = self._intent_from_tool_events(tool_events, payload["user_query"])
+        mapped_outputs = self._map_specialist_outputs(specialist_outputs)
+        action_items = self._build_action_items(intent=intent, query=user_query, specialist_outputs=mapped_outputs)
+        follow_up_questions = self._build_follow_up_questions(intent=intent)
+        disclaimer_level = pre_check.disclaimer_level
+        risk_reminder = self._risk_reminder(disclaimer_level)
+
+        if not answer_text:
+            answer_text = self._compose_answer_text(
+                intent=intent,
+                specialist_outputs=mapped_outputs,
+                action_items=action_items,
+                follow_up_questions=follow_up_questions,
+                risk_reminder=risk_reminder,
+            )
+
+        post_start = time.perf_counter()
+        post_check = self._safety_check(answer_text)
+        post_elapsed = int((time.perf_counter() - post_start) * 1000)
+        self._append_tool_event(
+            tool_events=tool_events,
+            event_callback=event_callback,
+            tool_name="safety_guard_postcheck",
+            status="success",
+            elapsed_ms=post_elapsed,
+            source="tool_calling",
+        )
+        trace.append({"stage": "post_safety", "result": post_check.as_dict()})
+
+        if post_check.decision == "refuse":
+            refusal = self._build_refusal_payload(post_check, trace)
+            refusal["tool_events"] = tool_events
+            return refusal
+        if post_check.decision == "rewrite":
+            answer_text = self._rewrite_to_safe(answer_text, post_check)
+
+        disclaimer_level = self._max_disclaimer(pre_check.disclaimer_level, post_check.disclaimer_level)
+        answer_text = self._ensure_risk_line(answer_text, self._risk_reminder(disclaimer_level))
+
+        return {
+            "answer_text": answer_text,
+            "follow_up_questions": follow_up_questions[:3],
+            "action_items": action_items[:5],
+            "safety_disclaimer_level": disclaimer_level,
+            "tool_events": tool_events,
+            "trace": trace,
+        }
+
+    def _chat_with_fallback_router(
+        self,
+        payload: dict[str, Any],
+        provider_name: str,
+        model_name: str,
+        event_callback: Callable[[str, dict[str, Any]], None] | None,
+        fallback_reason: str,
+    ) -> dict[str, Any]:
+        user_query = payload["user_query"]
+        selected_school = payload.get("selected_school", "east")
+        enabled_schools = self._normalize_enabled_schools(payload.get("enabled_schools"))
+
+        tool_events: list[dict[str, Any]] = []
+        pre_start = time.perf_counter()
+        pre_check = self._safety_check(user_query)
+        pre_elapsed = int((time.perf_counter() - pre_start) * 1000)
+        self._append_tool_event(
+            tool_events=tool_events,
+            event_callback=event_callback,
+            tool_name="safety_guard_precheck",
+            status="success",
+            elapsed_ms=pre_elapsed,
+            source="fallback_router",
+        )
+
         trace: list[dict[str, Any]] = [
             {
                 "stage": "pre_safety",
                 "skill": "oracle-safety-guardian",
                 "result": pre_check.as_dict(),
+                "fallback_reason": fallback_reason,
             }
         ]
         if pre_check.decision == "refuse":
-            return self._build_refusal_payload(pre_check, trace)
+            refusal = self._build_refusal_payload(pre_check, trace)
+            refusal["tool_events"] = tool_events
+            return refusal
 
         routing = self._route_intent(
             query=user_query,
             selected_school=selected_school,
             enabled_schools=enabled_schools,
         )
-        trace.append(
-            {
-                "stage": "routing",
-                "skill": "oracle-agent-team-orchestrator",
-                "intent": routing.intent,
-                "skills": routing.skills,
-                "reasons": routing.reasons,
-            }
-        )
 
         specialist_outputs: dict[str, str] = {}
         for skill in routing.skills:
+            spec_name = self._legacy_skill_to_tool_name(skill)
+            started_at = time.perf_counter()
+            self._append_tool_event(
+                tool_events=tool_events,
+                event_callback=event_callback,
+                tool_name=spec_name,
+                status="running",
+                source="fallback_router",
+            )
             output = self._invoke_skill(
                 skill=skill,
                 payload=payload,
@@ -148,14 +429,16 @@ class OracleOrchestratorService:
                 provider_name=provider_name,
                 model_name=model_name,
             )
-            specialist_outputs[skill] = output
-            trace.append(
-                {
-                    "stage": "specialist",
-                    "skill": f"oracle-{skill.replace('_', '-')}-agent",
-                    "reason": self._skill_reason(skill, routing.intent),
-                }
+            elapsed_ms = int((time.perf_counter() - started_at) * 1000)
+            self._append_tool_event(
+                tool_events=tool_events,
+                event_callback=event_callback,
+                tool_name=spec_name,
+                status="success",
+                elapsed_ms=elapsed_ms,
+                source="fallback_router",
             )
+            specialist_outputs[skill] = output
 
         action_items = self._build_action_items(
             intent=routing.intent,
@@ -166,7 +449,6 @@ class OracleOrchestratorService:
 
         disclaimer_level = pre_check.disclaimer_level
         risk_reminder = self._risk_reminder(disclaimer_level)
-
         answer_text = self._compose_answer_text(
             intent=routing.intent,
             specialist_outputs=specialist_outputs,
@@ -175,32 +457,286 @@ class OracleOrchestratorService:
             risk_reminder=risk_reminder,
         )
 
+        post_start = time.perf_counter()
         post_check = self._safety_check(answer_text)
-        trace.append(
-            {
-                "stage": "post_safety",
-                "skill": "oracle-safety-guardian",
-                "result": post_check.as_dict(),
-            }
+        post_elapsed = int((time.perf_counter() - post_start) * 1000)
+        self._append_tool_event(
+            tool_events=tool_events,
+            event_callback=event_callback,
+            tool_name="safety_guard_postcheck",
+            status="success",
+            elapsed_ms=post_elapsed,
+            source="fallback_router",
         )
+        trace.append({"stage": "post_safety", "skill": "oracle-safety-guardian", "result": post_check.as_dict()})
 
         if post_check.decision == "refuse":
-            return self._build_refusal_payload(post_check, trace)
-
+            refusal = self._build_refusal_payload(post_check, trace)
+            refusal["tool_events"] = tool_events
+            return refusal
         if post_check.decision == "rewrite":
             answer_text = self._rewrite_to_safe(answer_text, post_check)
 
         disclaimer_level = self._max_disclaimer(pre_check.disclaimer_level, post_check.disclaimer_level)
-        if disclaimer_level != "none":
-            answer_text = self._ensure_risk_line(answer_text, self._risk_reminder(disclaimer_level))
+        answer_text = self._ensure_risk_line(answer_text, self._risk_reminder(disclaimer_level))
 
         return {
             "answer_text": answer_text,
             "follow_up_questions": follow_up_questions[:3],
             "action_items": action_items[:5],
             "safety_disclaimer_level": disclaimer_level,
+            "tool_events": tool_events,
             "trace": trace,
         }
+
+    @staticmethod
+    def _emit_event(
+        event_callback: Callable[[str, dict[str, Any]], None] | None,
+        event_name: str,
+        payload: dict[str, Any],
+    ) -> None:
+        if event_callback:
+            event_callback(event_name, payload)
+
+    def _append_tool_event(
+        self,
+        tool_events: list[dict[str, Any]],
+        event_callback: Callable[[str, dict[str, Any]], None] | None,
+        tool_name: str,
+        status: str,
+        source: str,
+        elapsed_ms: int | None = None,
+    ) -> None:
+        display_name = TOOL_DISPLAY_NAMES.get(tool_name, tool_name)
+        event_item = {
+            "tool_name": tool_name,
+            "display_name": display_name,
+            "status": status,
+            "elapsed_ms": elapsed_ms,
+            "source": source,
+        }
+        tool_events.append(event_item)
+
+        event_payload = {"tool_name": tool_name, "display_name": display_name}
+        if elapsed_ms is not None:
+            event_payload["elapsed_ms"] = elapsed_ms
+        if status == "running":
+            self._emit_event(event_callback, "tool_start", event_payload)
+        elif status == "success":
+            event_payload["status"] = "success"
+            self._emit_event(event_callback, "tool_end", event_payload)
+        elif status == "error":
+            self._emit_event(event_callback, "tool_error", event_payload)
+
+    def _build_tools_for_provider(self) -> list[dict[str, Any]]:
+        tools: list[dict[str, Any]] = []
+        for spec in self.tool_registry.values():
+            tools.append(
+                {
+                    "type": "function",
+                    "function": {
+                        "name": spec.name,
+                        "description": spec.description,
+                        "parameters": spec.json_schema,
+                    },
+                }
+            )
+        return tools
+
+    def _validate_tool_arguments(self, spec: ToolSpec, arguments: dict[str, Any]) -> dict[str, Any]:
+        if not isinstance(arguments, dict):
+            return {}
+        allowed = set(spec.json_schema.get("properties", {}).keys())
+        if not allowed:
+            return {}
+        return {key: value for key, value in arguments.items() if key in allowed}
+
+    def _build_orchestrator_messages(self, payload: dict[str, Any]) -> list[dict[str, Any]]:
+        system_prompt = (
+            "你是 DeepSeek Oracle 的中控编排智能体。"
+            "你必须优先通过工具调用完成分析，最后输出安抚 + 解释 + 可执行建议 + 风险提示。"
+            "严禁绝对化断言、恐惧营销、投资买卖指令、医疗诊断与违法建议。"
+        )
+        user_content = (
+            f"用户问题：{payload['user_query']}\n"
+            f"历史摘要：{payload.get('conversation_history_summary') or '暂无'}\n"
+            f"用户画像：{payload.get('user_profile_summary') or '暂无'}\n"
+            f"出生信息：{payload.get('birth_info') or '暂无'}"
+        )
+        return [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_content},
+        ]
+
+    def _build_tool_registry(self) -> dict[str, ToolSpec]:
+        return {
+            "safety_guard_precheck": ToolSpec(
+                name="safety_guard_precheck",
+                description="执行输入安全审查，返回风险等级与策略。",
+                json_schema={"type": "object", "properties": {"content": {"type": "string"}}},
+                handler=self._tool_safety_precheck,
+            ),
+            "safety_guard_postcheck": ToolSpec(
+                name="safety_guard_postcheck",
+                description="执行输出安全审查，返回风险等级与策略。",
+                json_schema={"type": "object", "properties": {"content": {"type": "string"}}},
+                handler=self._tool_safety_postcheck,
+            ),
+            "ziwei_long_reading": ToolSpec(
+                name="ziwei_long_reading",
+                description="紫微斗数长线趋势解读。",
+                json_schema={
+                    "type": "object",
+                    "properties": {"focus_domain": {"type": "string"}, "intent": {"type": "string"}},
+                },
+                handler=self._tool_ziwei_long_reading,
+                fallback_skill="ziwei",
+            ),
+            "meihua_short_reading": ToolSpec(
+                name="meihua_short_reading",
+                description="梅花易数短期倾向与应对建议。",
+                json_schema={
+                    "type": "object",
+                    "properties": {"time_window": {"type": "string"}, "intent": {"type": "string"}},
+                },
+                handler=self._tool_meihua_short_reading,
+                fallback_skill="meihua",
+            ),
+            "daily_card": ToolSpec(
+                name="daily_card",
+                description="根据问题与用户信息生成每日卡片。",
+                json_schema={"type": "object", "properties": {"theme": {"type": "string"}}},
+                handler=self._tool_daily_card,
+                fallback_skill="daily_card",
+            ),
+            "philosophy_guidance": ToolSpec(
+                name="philosophy_guidance",
+                description="生成国学心法解释与实践建议。",
+                json_schema={"type": "object", "properties": {"theme": {"type": "string"}}},
+                handler=self._tool_philosophy_guidance,
+                fallback_skill="philosophy",
+            ),
+            "actionizer": ToolSpec(
+                name="actionizer",
+                description="把建议转为可执行行动清单。",
+                json_schema={"type": "object", "properties": {"intent": {"type": "string"}}},
+                handler=self._tool_actionizer,
+                fallback_skill="actionizer",
+            ),
+        }
+
+    def _tool_safety_precheck(
+        self,
+        payload: dict[str, Any],
+        args: dict[str, Any],
+        provider_name: str,
+        model_name: str,
+    ) -> str:
+        _ = (provider_name, model_name)
+        content = str(args.get("content") or payload.get("user_query") or "")
+        return json.dumps(self._safety_check(content).as_dict(), ensure_ascii=False)
+
+    def _tool_safety_postcheck(
+        self,
+        payload: dict[str, Any],
+        args: dict[str, Any],
+        provider_name: str,
+        model_name: str,
+    ) -> str:
+        _ = (provider_name, model_name)
+        content = str(args.get("content") or payload.get("user_query") or "")
+        return json.dumps(self._safety_check(content).as_dict(), ensure_ascii=False)
+
+    def _tool_ziwei_long_reading(
+        self,
+        payload: dict[str, Any],
+        args: dict[str, Any],
+        provider_name: str,
+        model_name: str,
+    ) -> str:
+        intent = str(args.get("intent") or "long_term")
+        return self._run_ziwei_agent(payload, intent=intent, provider_name=provider_name, model_name=model_name)
+
+    def _tool_meihua_short_reading(
+        self,
+        payload: dict[str, Any],
+        args: dict[str, Any],
+        provider_name: str,
+        model_name: str,
+    ) -> str:
+        _ = args
+        return self._run_meihua_agent(payload, provider_name=provider_name, model_name=model_name)
+
+    def _tool_daily_card(
+        self,
+        payload: dict[str, Any],
+        args: dict[str, Any],
+        provider_name: str,
+        model_name: str,
+    ) -> str:
+        _ = args
+        return self._run_daily_card_agent(payload, provider_name=provider_name, model_name=model_name)
+
+    def _tool_philosophy_guidance(
+        self,
+        payload: dict[str, Any],
+        args: dict[str, Any],
+        provider_name: str,
+        model_name: str,
+    ) -> str:
+        _ = args
+        return self._run_philosophy_agent(payload, provider_name=provider_name, model_name=model_name)
+
+    def _tool_actionizer(
+        self,
+        payload: dict[str, Any],
+        args: dict[str, Any],
+        provider_name: str,
+        model_name: str,
+    ) -> str:
+        intent = str(args.get("intent") or "short_term")
+        return self._run_actionizer_agent(payload, intent=intent, provider_name=provider_name, model_name=model_name)
+
+    def _map_specialist_outputs(self, specialist_outputs: dict[str, str]) -> dict[str, str]:
+        mapping = {
+            "ziwei_long_reading": "ziwei",
+            "meihua_short_reading": "meihua",
+            "daily_card": "daily_card",
+            "philosophy_guidance": "philosophy",
+            "actionizer": "actionizer",
+        }
+        mapped: dict[str, str] = {}
+        for tool_name, content in specialist_outputs.items():
+            key = mapping.get(tool_name, tool_name)
+            mapped[key] = content
+        return mapped
+
+    def _intent_from_tool_events(self, tool_events: list[dict[str, Any]], query: str) -> str:
+        tool_names = [item.get("tool_name") for item in tool_events if item.get("status") == "success"]
+        if "ziwei_long_reading" in tool_names and "meihua_short_reading" in tool_names:
+            return "dual_track"
+        if "ziwei_long_reading" in tool_names:
+            return "long_term"
+        if "daily_card" in tool_names:
+            return "daily_card"
+        if "philosophy_guidance" in tool_names:
+            return "mindset"
+        if "meihua_short_reading" in tool_names:
+            return "short_term"
+        routing = self._route_intent(query=query, selected_school="east", enabled_schools=self._normalize_enabled_schools(None))
+        return routing.intent
+
+    @staticmethod
+    def _legacy_skill_to_tool_name(skill: str) -> str:
+        mapping = {
+            "ziwei": "ziwei_long_reading",
+            "meihua": "meihua_short_reading",
+            "daily_card": "daily_card",
+            "philosophy": "philosophy_guidance",
+            "actionizer": "actionizer",
+            "tarot": "tarot",
+        }
+        return mapping.get(skill, skill)
 
     def _normalize_enabled_schools(self, enabled_schools: list[str] | None) -> list[str]:
         if enabled_schools:

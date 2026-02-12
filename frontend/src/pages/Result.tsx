@@ -5,6 +5,7 @@ import { exportReport, getInsightOverview, getResult } from "../api";
 import { ExecutionTimeChart } from "../components/ExecutionTimeChart";
 import { InkButton } from "../components/InkButton";
 import { InkCard } from "../components/InkCard";
+import { LifeKlineChart } from "../components/LifeKlineChart";
 import { LoadingAnimation } from "../components/LoadingAnimation";
 import type { AnalysisResult, InsightOverviewData } from "../types";
 
@@ -211,6 +212,11 @@ export default function ResultPage() {
               </div>
             </div>
             <p className="home-search__hint">{insight.life_kline.summary.overallTrend}</p>
+            <LifeKlineChart
+              points={insight.life_kline.sparse.years}
+              bestYears={insight.life_kline.summary.bestYears}
+              worstYears={insight.life_kline.summary.worstYears}
+            />
             <div className="kline-list">
               {insight.life_kline.sparse.years.map((item) => (
                 <article key={`${item.age}-${item.year}`} className="kline-item">

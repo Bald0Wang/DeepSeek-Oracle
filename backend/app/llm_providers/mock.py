@@ -1,6 +1,6 @@
 import time
 
-from .base import BaseLLMProvider, LLMResult
+from .base import BaseLLMProvider, LLMResult, UnsupportedToolCallingError
 
 
 class MockProvider(BaseLLMProvider):
@@ -23,3 +23,7 @@ class MockProvider(BaseLLMProvider):
             model=self.model,
             finish_reason="stop",
         )
+
+    def chat_with_tools(self, messages: list[dict], tools: list[dict], timeout_s: int = 1800):
+        _ = (messages, tools, timeout_s)
+        raise UnsupportedToolCallingError("provider mock does not support tool calling")

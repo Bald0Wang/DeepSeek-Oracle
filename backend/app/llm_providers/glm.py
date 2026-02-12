@@ -2,7 +2,7 @@ import time
 
 from zhipuai import ZhipuAI
 
-from .base import BaseLLMProvider, LLMResult, LLMUsage
+from .base import BaseLLMProvider, LLMResult, LLMUsage, UnsupportedToolCallingError
 
 
 class GLMProvider(BaseLLMProvider):
@@ -44,3 +44,7 @@ class GLMProvider(BaseLLMProvider):
             model=self.model,
             finish_reason=finish_reason,
         )
+
+    def chat_with_tools(self, messages: list[dict], tools: list[dict], timeout_s: int = 1800):
+        _ = (messages, tools, timeout_s)
+        raise UnsupportedToolCallingError("provider glm does not support tool calling in current integration")
