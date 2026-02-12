@@ -78,6 +78,17 @@ class UserRepo:
                 (password_hash, user_id),
             )
 
+    def update_role(self, user_id: int, role: str) -> None:
+        with db_cursor(self.database_path) as cursor:
+            cursor.execute(
+                """
+                UPDATE users
+                SET role = ?
+                WHERE id = ?
+                """,
+                (role, user_id),
+            )
+
     def list_users(self, page: int = 1, page_size: int = 20) -> dict[str, Any]:
         page = max(page, 1)
         page_size = min(max(page_size, 1), 100)

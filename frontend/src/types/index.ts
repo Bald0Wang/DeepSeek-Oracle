@@ -173,6 +173,11 @@ export interface EmailCodeRequest {
   email: string;
 }
 
+export interface AdminCodeLoginRequest {
+  email: string;
+  login_code: string;
+}
+
 export interface ResetPasswordRequest {
   email: string;
   reset_code: string;

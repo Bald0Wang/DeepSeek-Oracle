@@ -13,6 +13,7 @@ from app.utils.errors import business_error
 
 REGISTER_PURPOSE = "register"
 RESET_PASSWORD_PURPOSE = "reset_password"
+ADMIN_LOGIN_PURPOSE = "admin_login"
 
 
 class AuthService:
@@ -25,6 +26,7 @@ class AuthService:
         invite_only: bool,
         invite_codes: list[str],
         admin_emails: list[str],
+        special_admin_email: str,
         email_verify_required: bool,
         email_code_expire_minutes: int,
     ):
@@ -35,8 +37,58 @@ class AuthService:
         self.invite_only = invite_only
         self.invite_codes = {code.strip().upper() for code in invite_codes if code.strip()}
         self.admin_emails = {email.strip().lower() for email in admin_emails if email.strip()}
+        self.special_admin_email = special_admin_email.strip().lower()
         self.email_verify_required = email_verify_required
         self.email_code_expire_minutes = max(email_code_expire_minutes, 1)
+
+    def send_admin_login_code(self, email: str) -> dict:
+        normalized_email = self._assert_special_admin_email(email)
+
+        code = self._generate_verification_code()
+        self.verification_code_repo.create_code(
+            email=normalized_email,
+            purpose=ADMIN_LOGIN_PURPOSE,
+            code_hash=self._hash_verification_code(
+                email=normalized_email, purpose=ADMIN_LOGIN_PURPOSE, code=code
+            ),
+            expire_minutes=self.email_code_expire_minutes,
+        )
+        self._send_code_email(
+            to_email=normalized_email,
+            subject="DeepSeek Oracle 管理后台登录验证码",
+            code=code,
+            expire_minutes=self.email_code_expire_minutes,
+            scene_text="管理后台登录",
+        )
+        return {"sent": True, "expire_minutes": self.email_code_expire_minutes}
+
+    def login_admin_by_code(self, email: str, login_code: str) -> dict:
+        normalized_email = self._assert_special_admin_email(email)
+        if not self._consume_code(email=normalized_email, purpose=ADMIN_LOGIN_PURPOSE, code=login_code):
+            raise business_error("A4016", "invalid or expired admin login code", 403, False)
+
+        user = self.user_repo.get_by_email(normalized_email)
+        if user:
+            if not bool(user.get("is_active", 1)):
+                raise business_error("A4010", "account is disabled", 403, False)
+            if str(user.get("role", "user")) != "admin":
+                self.user_repo.update_role(int(user["id"]), "admin")
+            self.user_repo.update_last_login(int(user["id"]))
+            refreshed = self.user_repo.get_by_id(int(user["id"])) or user
+        else:
+            created = self.user_repo.create_user(
+                email=normalized_email,
+                password_hash=generate_password_hash(secrets.token_urlsafe(24)),
+                role="admin",
+                invite_code_used="SPECIAL-ADMIN",
+            )
+            if not created:
+                raise business_error("A5000", "create admin user failed", 500, False)
+            self.user_repo.update_last_login(int(created["id"]))
+            refreshed = self.user_repo.get_by_id(int(created["id"])) or created
+
+        token = self._build_token(user_id=int(refreshed["id"]), role=str(refreshed["role"]))
+        return {"token": token, "user": self._public_user(refreshed)}
 
     def send_register_code(self, email: str) -> dict:
         if self.user_repo.get_by_email(email):
@@ -185,6 +237,14 @@ class AuthService:
             code_hash=self._hash_verification_code(email=email, purpose=purpose, code=code),
         )
 
+    def _assert_special_admin_email(self, email: str) -> str:
+        normalized_email = email.strip().lower()
+        if not self.special_admin_email:
+            raise business_error("A4016", "special admin account is not configured", 503, False)
+        if normalized_email != self.special_admin_email:
+            raise business_error("A4016", "only special admin account can login here", 403, False)
+        return normalized_email
+
     @staticmethod
     def _generate_verification_code() -> str:
         return f"{secrets.randbelow(1000000):06d}"
@@ -236,6 +296,7 @@ def get_auth_service() -> AuthService:
         invite_only=current_app.config["INVITE_ONLY"],
         invite_codes=current_app.config["INVITE_CODES"],
         admin_emails=current_app.config["ADMIN_EMAILS"],
+        special_admin_email=current_app.config["SPECIAL_ADMIN_EMAIL"],
         email_verify_required=current_app.config["EMAIL_VERIFY_REQUIRED"],
         email_code_expire_minutes=current_app.config["EMAIL_CODE_EXPIRE_MINUTES"],
     )

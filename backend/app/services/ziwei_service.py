@@ -150,14 +150,18 @@ class ZiweiService:
         if self.izthon_src_path:
             candidate_paths.append(Path(self.izthon_src_path))
 
-        # Monorepo fallback: <outer-root>/izthon/src
-        candidate_paths.append(Path(__file__).resolve().parents[4] / "izthon" / "src")
+        # Monorepo fallback: walk up from current file and try "<parent>/izthon/src".
+        # This avoids fixed-depth indexing like parents[4], which crashes in container paths.
+        for parent in Path(__file__).resolve().parents:
+            candidate_paths.append(parent / "izthon" / "src")
 
+        inserted_paths: set[str] = set()
         for candidate in candidate_paths:
             if candidate.exists():
                 candidate_str = str(candidate)
-                if candidate_str not in sys.path:
+                if candidate_str not in inserted_paths and candidate_str not in sys.path:
                     sys.path.insert(0, candidate_str)
+                    inserted_paths.add(candidate_str)
 
         try:
             from izthon.astro import by_lunar, by_solar

@@ -238,6 +238,18 @@ class AnalysisService:
             llm_service = LLMService(
                 provider_name=task["provider"],
                 model=task["model"],
+                provider_config={
+                    "LLM_MODEL": current_app.config.get("LLM_MODEL", ""),
+                    "VOLCANO_API_KEY": current_app.config.get("VOLCANO_API_KEY", ""),
+                    "VOLCANO_MODEL": current_app.config.get("VOLCANO_MODEL", ""),
+                    "ALIYUN_API_KEY": current_app.config.get("ALIYUN_API_KEY", ""),
+                    "ALIYUN_BASE_URL": current_app.config.get("ALIYUN_BASE_URL", ""),
+                    "DEEPSEEK_API_KEY": current_app.config.get("DEEPSEEK_API_KEY", ""),
+                    "DEEPSEEK_BASE_URL": current_app.config.get("DEEPSEEK_BASE_URL", ""),
+                    "ZHIPU_API_KEY": current_app.config.get("ZHIPU_API_KEY", ""),
+                    "QWEN_API_KEY": current_app.config.get("QWEN_API_KEY", ""),
+                    "QWEN_BASE_URL": current_app.config.get("QWEN_BASE_URL", ""),
+                },
                 timeout_s=self.request_timeout_s,
                 max_retries=self.llm_max_retries,
             )
