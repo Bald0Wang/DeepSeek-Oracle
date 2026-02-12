@@ -127,11 +127,38 @@ export interface OracleTraceItem {
   result?: Record<string, unknown>;
 }
 
+export interface OracleToolEvent {
+  tool_name: string;
+  display_name: string;
+  status: "running" | "success" | "error";
+  elapsed_ms?: number | null;
+  source?: "tool_calling" | "fallback_router";
+}
+
+export type OracleStreamEvent =
+  | { event: "session_start"; data: { provider: string; model: string } }
+  | { event: "tool_start"; data: { tool_name: string; display_name: string } }
+  | { event: "tool_end"; data: { tool_name: string; display_name: string; status: "success"; elapsed_ms?: number } }
+  | { event: "tool_error"; data: { tool_name: string; display_name: string; elapsed_ms?: number } }
+  | {
+      event: "final";
+      data: {
+        answer_text: string;
+        follow_up_questions: string[];
+        action_items: OracleActionItem[];
+        safety_disclaimer_level: DisclaimerLevel;
+      };
+    }
+  | { event: "done"; data: Record<string, never> }
+  | { event: "error"; data: { message: string } };
+
 export interface OracleChatRequest {
   user_query: string;
   conversation_history_summary?: string;
   user_profile_summary?: string;
+  /** @deprecated 路由策略改为后端控制 */
   selected_school?: SelectedSchool;
+  /** @deprecated 路由策略改为后端控制 */
   enabled_schools?: EnabledSchool[];
   birth_info?: BirthInfo;
   provider?: string;
@@ -143,7 +170,8 @@ export interface OracleChatResponse {
   follow_up_questions: string[];
   action_items: OracleActionItem[];
   safety_disclaimer_level: DisclaimerLevel;
-  trace: OracleTraceItem[];
+  trace?: OracleTraceItem[];
+  tool_events?: OracleToolEvent[];
 }
 
 export type UserRole = "admin" | "user";

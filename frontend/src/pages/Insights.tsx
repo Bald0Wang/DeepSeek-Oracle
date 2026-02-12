@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { getInsightOverview } from "../api";
 import { InkButton } from "../components/InkButton";
 import { InkCard } from "../components/InkCard";
+import { LifeKlineChart } from "../components/LifeKlineChart";
 import { LoadingAnimation } from "../components/LoadingAnimation";
 import type { InsightOverviewData, MonthlyCalendarDay, MonthlyCalendarPayload } from "../types";
 
@@ -163,6 +164,11 @@ export default function InsightsPage() {
               </div>
             </div>
             <p className="home-search__hint">{data.life_kline.summary.overallTrend}</p>
+            <LifeKlineChart
+              points={data.life_kline.sparse.years}
+              bestYears={data.life_kline.summary.bestYears}
+              worstYears={data.life_kline.summary.worstYears}
+            />
             <div className="kline-list">
               {data.life_kline.sparse.years.map((item) => (
                 <article key={`${item.age}-${item.year}`} className="kline-item">

@@ -560,6 +560,191 @@ select {
   gap: 1rem;
 }
 
+.oracle-chat__single-frame {
+  display: grid;
+  gap: 1rem;
+}
+
+.oracle-chat__thread {
+  max-height: min(52vh, 37rem);
+  overflow: auto;
+  display: grid;
+  gap: 0.875rem;
+  padding: 0.875rem;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(191, 149, 94, 0.26);
+  background: linear-gradient(180deg, rgba(34, 19, 14, 0.84), rgba(28, 16, 12, 0.78));
+}
+
+.oracle-chat__empty {
+  border: 1px dashed rgba(201, 160, 102, 0.35);
+  border-radius: var(--radius-sm);
+  background: rgba(47, 27, 21, 0.62);
+  padding: 1rem 0.875rem;
+  color: var(--text-secondary);
+  display: grid;
+  gap: 0.25rem;
+}
+
+.oracle-chat__empty-title {
+  font-size: 0.95rem;
+  color: #f4e3ca;
+  font-weight: 620;
+}
+
+.oracle-chat__empty-desc {
+  font-size: 0.8125rem;
+}
+
+.oracle-turn {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.oracle-turn__bubble {
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(186, 145, 90, 0.24);
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.oracle-turn__bubble--user {
+  justify-self: end;
+  width: min(88%, 42rem);
+  background: linear-gradient(160deg, rgba(80, 45, 30, 0.85), rgba(58, 33, 23, 0.82));
+}
+
+.oracle-turn__bubble--assistant {
+  justify-self: start;
+  width: min(94%, 44rem);
+  background: linear-gradient(160deg, rgba(44, 25, 19, 0.88), rgba(34, 19, 15, 0.82));
+}
+
+.oracle-turn__meta {
+  font-size: 0.75rem;
+  color: rgba(231, 204, 165, 0.86);
+  letter-spacing: 0.01em;
+}
+
+.oracle-turn__meta--hint {
+  margin-top: -0.25rem;
+  color: rgba(220, 188, 146, 0.82);
+}
+
+.oracle-turn__query {
+  color: #f4e6d2;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.oracle-turn__section-title {
+  color: #eed4ac;
+  font-size: 0.8rem;
+  font-weight: 620;
+}
+
+.oracle-turn__plan {
+  display: grid;
+  gap: 0.375rem;
+}
+
+.oracle-turn__plan-list {
+  display: grid;
+  gap: 0.375rem;
+}
+
+.oracle-turn__plan-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.625rem;
+  border: 1px solid rgba(189, 147, 91, 0.2);
+  border-radius: var(--radius-sm);
+  background: rgba(55, 32, 23, 0.54);
+  padding: 0.5rem 0.625rem;
+  font-size: 0.8125rem;
+  color: #f0ddbe;
+}
+
+.oracle-turn__plan-empty {
+  font-size: 0.8125rem;
+  color: rgba(218, 189, 148, 0.82);
+}
+
+.oracle-turn__status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.5rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(201, 160, 101, 0.32);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.oracle-turn__status--running {
+  color: #ffe4b2;
+  background: rgba(145, 95, 45, 0.3);
+}
+
+.oracle-turn__status--success {
+  color: #d9f4c9;
+  background: rgba(72, 124, 67, 0.3);
+}
+
+.oracle-turn__status--error {
+  color: #ffd2cb;
+  background: rgba(145, 63, 51, 0.32);
+}
+
+.oracle-turn__answer {
+  border: 1px solid rgba(184, 143, 88, 0.22);
+  border-radius: var(--radius-sm);
+  background: rgba(39, 22, 17, 0.6);
+  padding: 0.6875rem 0.75rem;
+}
+
+.oracle-turn__actions {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.oracle-turn__follow-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.oracle-turn__follow-chip {
+  cursor: pointer;
+  min-height: 2.25rem;
+  border: 1px solid rgba(198, 157, 100, 0.3);
+  border-radius: var(--radius-full);
+  background: rgba(56, 31, 23, 0.7);
+  color: #e8d3b5;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.oracle-turn__follow-chip:hover {
+  border-color: rgba(218, 174, 114, 0.5);
+  background: rgba(73, 40, 28, 0.78);
+}
+
+.oracle-turn__follow-chip:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 0.1875rem rgba(197, 156, 101, 0.42);
+}
+
+.oracle-chat__composer {
+  border-top: 1px solid rgba(191, 149, 94, 0.18);
+  padding-top: 0.5rem;
+}
+
 .oracle-chat__textarea {
   width: 100%;
   min-height: 6.5rem;
@@ -1317,6 +1502,109 @@ select:focus {
 .kline-list {
   display: grid;
   gap: 0.5rem;
+}
+
+.kline-chart {
+  margin-top: 0.25rem;
+  border: 1px solid rgba(183, 141, 88, 0.24);
+  border-radius: var(--radius-sm);
+  background: linear-gradient(180deg, rgba(44, 25, 19, 0.56) 0%, rgba(31, 18, 14, 0.44) 100%);
+  padding: 0.5rem 0.5rem 0.35rem;
+  position: relative;
+}
+
+.kline-chart__svg {
+  display: block;
+  width: 100%;
+  height: 16rem;
+}
+
+.kline-chart__axis {
+  stroke: rgba(209, 167, 109, 0.42);
+  stroke-width: 1;
+}
+
+.kline-chart__grid-line {
+  stroke: rgba(183, 141, 88, 0.2);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+}
+
+.kline-chart__line {
+  fill: none;
+  stroke: #d7a264;
+  stroke-width: 2.4;
+  filter: drop-shadow(0 0 0.45rem rgba(215, 162, 100, 0.36));
+}
+
+.kline-chart__cursor {
+  stroke: rgba(226, 193, 145, 0.62);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+
+.kline-chart__dot {
+  fill: #f2d0a2;
+  stroke: rgba(49, 24, 16, 0.92);
+  stroke-width: 1.2;
+  transition: r 0.15s ease, filter 0.15s ease;
+}
+
+.kline-chart__dot--best {
+  fill: #e8f1c4;
+  stroke: rgba(106, 125, 62, 0.86);
+}
+
+.kline-chart__dot--worst {
+  fill: #f4c0b2;
+  stroke: rgba(128, 55, 43, 0.86);
+}
+
+.kline-chart__dot--active {
+  filter: drop-shadow(0 0 0.35rem rgba(248, 214, 163, 0.8));
+}
+
+.kline-chart__tick {
+  font-size: 11px;
+  fill: rgba(226, 200, 163, 0.82);
+  text-anchor: end;
+}
+
+.kline-chart__age {
+  font-size: 11px;
+  fill: rgba(226, 200, 163, 0.86);
+  text-anchor: middle;
+}
+
+.kline-chart__tooltip {
+  position: absolute;
+  pointer-events: none;
+  transform: translate(0, -100%);
+  min-width: 11rem;
+  max-width: 15rem;
+  border: 1px solid rgba(205, 163, 107, 0.4);
+  border-radius: 0.625rem;
+  background: rgba(30, 17, 13, 0.95);
+  box-shadow: 0 0.75rem 1.6rem rgba(8, 4, 3, 0.48);
+  padding: 0.5rem 0.6rem;
+  z-index: 2;
+}
+
+.kline-chart__tooltip--right {
+  transform: translate(-100%, -100%);
+}
+
+.kline-chart__tooltip-title {
+  color: #f7dfbc;
+  font-size: 0.78rem;
+  font-weight: 620;
+  margin-bottom: 0.2rem;
+}
+
+.kline-chart__tooltip-text {
+  color: #e2caa8;
+  font-size: 0.72rem;
+  line-height: 1.45;
 }
 
 .kline-item {
