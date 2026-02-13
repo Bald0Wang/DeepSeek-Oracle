@@ -32,6 +32,7 @@ export interface OracleConversationTurn {
 export interface OracleChatSessionState {
   loading: boolean;
   activeTurnId: string | null;
+  conversationId: number | null;
   error: string | null;
   turns: OracleConversationTurn[];
   startedAt: number | null;
@@ -42,6 +43,7 @@ type Listener = (state: OracleChatSessionState) => void;
 let sessionState: OracleChatSessionState = {
   loading: false,
   activeTurnId: null,
+  conversationId: null,
   error: null,
   turns: [],
   startedAt: null,
@@ -107,6 +109,9 @@ const applyFinalResult = (turnId: string, result: OracleChatResponse) => {
     safetyDisclaimerLevel: result.safety_disclaimer_level,
     error: null,
   }));
+  if (typeof result.conversation_id === "number" && result.conversation_id > 0) {
+    setSessionState({ conversationId: result.conversation_id });
+  }
 };
 
 const applyFailure = (turnId: string, message: string) => {
@@ -134,11 +139,38 @@ export const clearOracleChatSession = () => {
   sessionState = {
     loading: false,
     activeTurnId: null,
+    conversationId: null,
     error: null,
     turns: [],
     startedAt: null,
   };
   emit();
+};
+
+export const setOracleChatConversation = (conversationId: number | null) => {
+  if (sessionState.loading) {
+    return;
+  }
+  setSessionState({
+    conversationId,
+    activeTurnId: null,
+    error: null,
+    turns: [],
+  });
+};
+
+export const hydrateOracleChatSession = (conversationId: number | null, turns: OracleConversationTurn[]) => {
+  if (sessionState.loading) {
+    return;
+  }
+  setSessionState({
+    loading: false,
+    activeTurnId: null,
+    conversationId,
+    error: null,
+    turns,
+    startedAt: null,
+  });
 };
 
 export const startOracleChatSession = async (payload: OracleChatRequest) => {
@@ -160,6 +192,10 @@ export const startOracleChatSession = async (payload: OracleChatRequest) => {
   setSessionState({
     loading: true,
     activeTurnId: turnId,
+    conversationId:
+      typeof payload.conversation_id === "number" && payload.conversation_id > 0
+        ? payload.conversation_id
+        : sessionState.conversationId,
     error: null,
     turns: [...sessionState.turns, newTurn],
     startedAt: Date.now(),

@@ -138,6 +138,36 @@ CREATE TABLE IF NOT EXISTS monthly_calendars (
 CREATE INDEX IF NOT EXISTS idx_monthly_calendar_user_month
 ON monthly_calendars(user_id, month_key);
 
+CREATE TABLE IF NOT EXISTS oracle_conversations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  title TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_oracle_conversations_user_updated
+ON oracle_conversations(user_id, updated_at DESC);
+
+CREATE TABLE IF NOT EXISTS oracle_turns (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  conversation_id INTEGER NOT NULL,
+  user_query TEXT NOT NULL,
+  context_summary TEXT NOT NULL,
+  status TEXT NOT NULL,
+  plan_steps_json TEXT NOT NULL,
+  answer_text TEXT NOT NULL,
+  action_items_json TEXT NOT NULL,
+  follow_up_questions_json TEXT NOT NULL,
+  safety_disclaimer_level TEXT NOT NULL,
+  error_message TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_oracle_turns_conversation_created
+ON oracle_turns(conversation_id, created_at ASC);
+
 CREATE TABLE IF NOT EXISTS scheduler_runs (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   job_name TEXT NOT NULL,
@@ -161,6 +191,7 @@ def init_db(database_path: str) -> None:
         conn.executescript(SCHEMA_SQL)
         _migrate_user_scope_columns(conn)
         _migrate_insight_tables(conn)
+        _migrate_oracle_chat_tables(conn)
         conn.commit()
 
 
@@ -258,6 +289,51 @@ def _migrate_insight_tables(conn: sqlite3.Connection) -> None:
         """
         CREATE INDEX IF NOT EXISTS idx_monthly_calendar_user_month
         ON monthly_calendars(user_id, month_key)
+        """
+    )
+
+
+def _migrate_oracle_chat_tables(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS oracle_conversations (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER NOT NULL,
+          title TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_oracle_conversations_user_updated
+        ON oracle_conversations(user_id, updated_at DESC)
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS oracle_turns (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          conversation_id INTEGER NOT NULL,
+          user_query TEXT NOT NULL,
+          context_summary TEXT NOT NULL,
+          status TEXT NOT NULL,
+          plan_steps_json TEXT NOT NULL,
+          answer_text TEXT NOT NULL,
+          action_items_json TEXT NOT NULL,
+          follow_up_questions_json TEXT NOT NULL,
+          safety_disclaimer_level TEXT NOT NULL,
+          error_message TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_oracle_turns_conversation_created
+        ON oracle_turns(conversation_id, created_at ASC)
         """
     )
 

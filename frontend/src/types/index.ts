@@ -147,6 +147,7 @@ export type OracleStreamEvent =
         follow_up_questions: string[];
         action_items: OracleActionItem[];
         safety_disclaimer_level: DisclaimerLevel;
+        conversation_id?: number;
       };
     }
   | { event: "done"; data: Record<string, never> }
@@ -154,6 +155,7 @@ export type OracleStreamEvent =
 
 export interface OracleChatRequest {
   user_query: string;
+  conversation_id?: number;
   conversation_history_summary?: string;
   user_profile_summary?: string;
   /** @deprecated 路由策略改为后端控制 */
@@ -166,12 +168,38 @@ export interface OracleChatRequest {
 }
 
 export interface OracleChatResponse {
+  conversation_id?: number;
   answer_text: string;
   follow_up_questions: string[];
   action_items: OracleActionItem[];
   safety_disclaimer_level: DisclaimerLevel;
   trace?: OracleTraceItem[];
   tool_events?: OracleToolEvent[];
+}
+
+export interface OracleConversationSummary {
+  id: number;
+  title: string;
+  created_at: string;
+  updated_at: string;
+  turn_count: number;
+  last_query?: string;
+}
+
+export interface OracleConversationTurnRecord {
+  id: number;
+  conversation_id: number;
+  user_query: string;
+  context_summary: string;
+  status: "succeeded" | "failed";
+  plan_steps: OracleToolEvent[];
+  answer_text: string;
+  action_items: OracleActionItem[];
+  follow_up_questions: string[];
+  safety_disclaimer_level: DisclaimerLevel;
+  error_message?: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export type UserRole = "admin" | "user";

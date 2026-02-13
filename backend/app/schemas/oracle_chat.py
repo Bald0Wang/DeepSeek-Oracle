@@ -114,6 +114,16 @@ def validate_oracle_chat_payload(payload: dict) -> dict:
         "birth_info": _optional_birth_info(payload),
     }
 
+    conversation_id = payload.get("conversation_id")
+    if conversation_id is not None:
+        try:
+            conversation_id_value = int(conversation_id)
+        except (TypeError, ValueError) as exc:
+            raise validation_error("conversation_id", "conversation_id must be integer") from exc
+        if conversation_id_value <= 0:
+            raise validation_error("conversation_id", "conversation_id must be positive")
+        normalized["conversation_id"] = conversation_id_value
+
     provider = payload.get("provider")
     model = payload.get("model")
     if provider is not None:

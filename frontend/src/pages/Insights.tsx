@@ -104,7 +104,7 @@ export default function InsightsPage() {
         </form>
 
         {error ? <p className="error-text">{error}</p> : null}
-        {!loading && !error && !data ? <p className="loading-state-text">暂无数据，请先完成一次开始分析。</p> : null}
+        {!loading && !error && !data ? <p className="loading-state-text">暂无数据，请先完成一次咨询分析。</p> : null}
         {loading ? (
           <div className="loading-container">
             <LoadingAnimation size="large" />
@@ -190,8 +190,8 @@ export default function InsightsPage() {
 
       <InkCard title="快捷入口" icon="捷">
         <div className="actions-row">
-          <Link to="/start-analysis">
-            <InkButton type="button" kind="ghost">返回开始分析</InkButton>
+          <Link to="/oracle">
+            <InkButton type="button" kind="ghost">返回咨询对话</InkButton>
           </Link>
           <Link to="/history">
             <InkButton type="button" kind="ghost">查看历史记录</InkButton>

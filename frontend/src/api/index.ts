@@ -18,6 +18,8 @@ import type {
   MeihuaDivinationResponse,
   OracleChatRequest,
   OracleChatResponse,
+  OracleConversationSummary,
+  OracleConversationTurnRecord,
   OracleStreamEvent,
   ResetPasswordRequest,
   SubmitAnalysisData,
@@ -99,6 +101,19 @@ export const exportReport = async (id: number, scope = "full") =>
 
 export const oracleChat = async (payload: OracleChatRequest) =>
   unwrap(await api.post<ApiResponse<OracleChatResponse>>("/oracle/chat", payload));
+
+export const createOracleConversation = async (title?: string) =>
+  unwrap(await api.post<ApiResponse<{ id: number; title?: string; created_at: string; updated_at: string }>>("/oracle/conversations", { title }));
+
+export const getOracleConversations = async (limit = 50) =>
+  unwrap(await api.get<ApiResponse<{ items: OracleConversationSummary[] }>>(`/oracle/conversations?limit=${limit}`));
+
+export const getOracleConversationTurns = async (conversationId: number) =>
+  unwrap(
+    await api.get<ApiResponse<{ conversation: OracleConversationSummary; turns: OracleConversationTurnRecord[] }>>(
+      `/oracle/conversations/${conversationId}/turns`
+    )
+  );
 
 export const divinateZiwei = async (payload: ZiweiDivinationRequest) =>
   unwrap(
@@ -234,6 +249,7 @@ export const oracleChatStream = async (
             follow_up_questions: data.follow_up_questions,
             action_items: data.action_items,
             safety_disclaimer_level: data.safety_disclaimer_level,
+            conversation_id: typeof data.conversation_id === "number" ? data.conversation_id : undefined,
           },
         });
         continue;

@@ -208,6 +208,7 @@ class OracleOrchestratorService:
         event_callback: Callable[[str, dict[str, Any]], None] | None,
     ) -> dict[str, Any]:
         user_query = payload["user_query"]
+        enabled_schools = self._normalize_enabled_schools(payload.get("enabled_schools"))
         tool_events: list[dict[str, Any]] = []
         trace: list[dict[str, Any]] = []
 
@@ -230,9 +231,22 @@ class OracleOrchestratorService:
             return refusal
 
         provider = create_provider(provider_name, model_name)
-        messages = self._build_orchestrator_messages(payload)
-        tools = self._build_tools_for_provider()
+        allowed_specs = self._build_enabled_tool_specs(enabled_schools)
+        allowed_tool_names = {spec.name for spec in allowed_specs}
+        messages = self._build_orchestrator_messages(
+            payload=payload,
+            enabled_schools=enabled_schools,
+            enabled_tool_names=[spec.name for spec in allowed_specs],
+        )
+        tools = self._build_tools_for_provider(allowed_specs)
         specialist_outputs: dict[str, str] = {}
+        trace.append(
+            {
+                "stage": "tool_config",
+                "enabled_schools": enabled_schools,
+                "enabled_tools": sorted(allowed_tool_names),
+            }
+        )
 
         answer_text = ""
         reached_final = False
@@ -260,7 +274,25 @@ class OracleOrchestratorService:
 
                 for tool_call in tool_result.tool_calls:
                     spec = self.tool_registry.get(tool_call.name)
-                    if not spec:
+                    if not spec or spec.name not in allowed_tool_names:
+                        started_at = time.perf_counter()
+                        elapsed_ms = int((time.perf_counter() - started_at) * 1000)
+                        self._append_tool_event(
+                            tool_events=tool_events,
+                            event_callback=event_callback,
+                            tool_name=tool_call.name,
+                            status="error",
+                            elapsed_ms=elapsed_ms,
+                            source="tool_calling",
+                        )
+                        messages.append(
+                            {
+                                "role": "tool",
+                                "tool_call_id": tool_call.id,
+                                "name": tool_call.name,
+                                "content": f"tool disabled: {tool_call.name}",
+                            }
+                        )
                         continue
                     started_at = time.perf_counter()
                     self._append_tool_event(
@@ -528,9 +560,10 @@ class OracleOrchestratorService:
         elif status == "error":
             self._emit_event(event_callback, "tool_error", event_payload)
 
-    def _build_tools_for_provider(self) -> list[dict[str, Any]]:
+    def _build_tools_for_provider(self, specs: list[ToolSpec] | None = None) -> list[dict[str, Any]]:
         tools: list[dict[str, Any]] = []
-        for spec in self.tool_registry.values():
+        selected_specs = specs if specs is not None else list(self.tool_registry.values())
+        for spec in selected_specs:
             tools.append(
                 {
                     "type": "function",
@@ -551,17 +584,25 @@ class OracleOrchestratorService:
             return {}
         return {key: value for key, value in arguments.items() if key in allowed}
 
-    def _build_orchestrator_messages(self, payload: dict[str, Any]) -> list[dict[str, Any]]:
+    def _build_orchestrator_messages(
+        self,
+        payload: dict[str, Any],
+        enabled_schools: list[str],
+        enabled_tool_names: list[str],
+    ) -> list[dict[str, Any]]:
         system_prompt = (
             "你是 DeepSeek Oracle 的中控编排智能体。"
             "你必须优先通过工具调用完成分析，最后输出安抚 + 解释 + 可执行建议 + 风险提示。"
             "严禁绝对化断言、恐惧营销、投资买卖指令、医疗诊断与违法建议。"
+            "你只能调用“已启用工具列表”里的工具，不允许调用未启用工具。"
         )
         user_content = (
             f"用户问题：{payload['user_query']}\n"
             f"历史摘要：{payload.get('conversation_history_summary') or '暂无'}\n"
             f"用户画像：{payload.get('user_profile_summary') or '暂无'}\n"
-            f"出生信息：{payload.get('birth_info') or '暂无'}"
+            f"出生信息：{payload.get('birth_info') or '暂无'}\n"
+            f"已启用智能体：{', '.join(enabled_schools) if enabled_schools else '无'}\n"
+            f"已启用工具：{', '.join(enabled_tool_names) if enabled_tool_names else '无'}"
         )
         return [
             {"role": "system", "content": system_prompt},
@@ -737,6 +778,41 @@ class OracleOrchestratorService:
             "tarot": "tarot",
         }
         return mapping.get(skill, skill)
+
+    def _build_enabled_tool_specs(self, enabled_schools: list[str]) -> list[ToolSpec]:
+        school_to_tool = {
+            "ziwei": "ziwei_long_reading",
+            "meihua": "meihua_short_reading",
+            "daily_card": "daily_card",
+            "philosophy": "philosophy_guidance",
+            "actionizer": "actionizer",
+        }
+        ordered_names: list[str] = ["safety_guard_precheck", "safety_guard_postcheck"]
+
+        for school in enabled_schools:
+            tool_name = school_to_tool.get(school)
+            if tool_name and tool_name not in ordered_names:
+                ordered_names.append(tool_name)
+
+        # Ensure at least one business tool is enabled besides safety checks.
+        has_business_tool = any(
+            name
+            not in {
+                "safety_guard_precheck",
+                "safety_guard_postcheck",
+                "actionizer",
+            }
+            for name in ordered_names
+        )
+        if not has_business_tool:
+            ordered_names.append("meihua_short_reading")
+
+        specs: list[ToolSpec] = []
+        for name in ordered_names:
+            spec = self.tool_registry.get(name)
+            if spec:
+                specs.append(spec)
+        return specs
 
     def _normalize_enabled_schools(self, enabled_schools: list[str] | None) -> list[str]:
         if enabled_schools:
@@ -955,13 +1031,18 @@ class OracleOrchestratorService:
     def _run_philosophy_agent(self, payload: dict[str, Any], provider_name: str, model_name: str) -> str:
         query = payload["user_query"]
         fallback = (
-            "核心心法：先定心，再定事。\n"
-            "白话解释：先把情绪稳定下来，判断会更清楚，行动也更稳。\n"
-            "可实践方法：写下3个可控项、1个不可控项；先做一个10分钟内可完成动作。\n"
-            "今日一问：如果只做一件最关键的小事，会是什么？"
+            "核心心法：知行合一、致良知。\n"
+            "白话解释：先回到内心真实的判断，再把判断落实到一个具体行动；不空想，也不蛮干。\n"
+            "可实践方法：\n"
+            "1) 先写下你此刻最真实的顾虑与期待各1条；\n"
+            "2) 用“此事是否更接近良知”筛选当下选择；\n"
+            "3) 立刻执行一个10分钟可完成的小动作，做到知行同步。\n"
+            "补充脉络：心学重“反求诸己”，可结合陆九渊一系的内在觉察来校准节奏。\n"
+            "今日一问：我现在的这个决定，是否既对得起内心，也能落到现实行动？"
         )
         prompt = (
-            "你是心法解读智能体，使用现代语言提炼可实践方法。\n"
+            "你是心法解读智能体，重点参考王阳明“知行合一、致良知”，"
+            "并可吸收陆九渊心学脉络，使用现代语言提炼可实践方法。\n"
             f"问题：{query}\n"
             "输出：核心心法、白话解释、可实践方法、今日一问。"
         )

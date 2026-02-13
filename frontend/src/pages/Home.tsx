@@ -19,11 +19,8 @@ export default function HomePage() {
         <div className="actions-row landing-hero__actions">
           {isLoggedIn ? (
             <>
-              <Link to="/start-analysis">
-                <InkButton type="button">开始分析</InkButton>
-              </Link>
               <Link to="/oracle">
-                <InkButton type="button" kind="ghost">进入咨询对话</InkButton>
+                <InkButton type="button">进入咨询对话</InkButton>
               </Link>
             </>
           ) : (

@@ -10,8 +10,6 @@ import AdminLoginPage from "./pages/AdminLogin";
 import DetailPage from "./pages/Detail";
 import ForgotPasswordPage from "./pages/ForgotPassword";
 import HistoryPage from "./pages/History";
-import HomePage from "./pages/Home";
-import HomeVariantsPage from "./pages/HomeVariants";
 import InsightsPage from "./pages/Insights";
 import LoginPage from "./pages/Login";
 import LoadingPage from "./pages/Loading";
@@ -19,7 +17,6 @@ import MeihuaFortunePage from "./pages/MeihuaFortune";
 import OracleChatPage from "./pages/OracleChat";
 import RegisterPage from "./pages/Register";
 import ResultPage from "./pages/Result";
-import StartAnalysisPage from "./pages/StartAnalysis";
 import ZiweiFortunePage from "./pages/ZiweiFortune";
 
 interface GuardProps {
@@ -56,7 +53,7 @@ function RequireAdmin({ authReady, user }: GuardProps) {
     return <Navigate to="/admin" replace />;
   }
   if (currentUser.role !== "admin") {
-    return <Navigate to="/start-analysis" replace />;
+    return <Navigate to="/oracle" replace />;
   }
   return <Outlet />;
 }
@@ -67,7 +64,7 @@ function PublicOnly({ authReady, user }: GuardProps) {
     return <LoadingGate />;
   }
   if (currentUser) {
-    return <Navigate to={currentUser.role === "admin" ? "/admin/dashboard" : "/start-analysis"} replace />;
+    return <Navigate to={currentUser.role === "admin" ? "/admin/dashboard" : "/oracle"} replace />;
   }
   return <Outlet />;
 }
@@ -142,7 +139,10 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route element={<Layout user={activeUser} authReady={authReady} onLogout={handleLogout} />}>
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<Navigate to="/oracle" replace />} />
+          <Route path="/oracle" element={<OracleChatPage />} />
+          <Route path="/start-analysis" element={<Navigate to="/oracle" replace />} />
+          <Route path="/home-variants" element={<Navigate to="/oracle" replace />} />
 
           <Route element={<PublicOnly authReady={authReady} user={activeUser} />}>
             <Route path="/admin" element={<AdminLoginPage onAuthSuccess={handleAuthSuccess} />} />
@@ -152,9 +152,6 @@ export default function App() {
           </Route>
 
           <Route element={<RequireAuth authReady={authReady} user={activeUser} />}>
-            <Route path="/start-analysis" element={<StartAnalysisPage />} />
-            <Route path="/home-variants" element={<HomeVariantsPage />} />
-            <Route path="/oracle" element={<OracleChatPage />} />
             <Route path="/ziwei" element={<ZiweiFortunePage />} />
             <Route path="/meihua" element={<MeihuaFortunePage />} />
             <Route path="/loading/:taskId" element={<LoadingPage />} />
@@ -172,7 +169,7 @@ export default function App() {
             path="*"
             element={
               <Navigate
-                to={activeUser ? (activeUser.role === "admin" ? "/admin/dashboard" : "/start-analysis") : "/"}
+                to={activeUser ? (activeUser.role === "admin" ? "/admin/dashboard" : "/oracle") : "/oracle"}
                 replace
               />
             }
