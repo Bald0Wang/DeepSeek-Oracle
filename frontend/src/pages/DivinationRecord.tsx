@@ -6,6 +6,7 @@ import { InkButton } from "../components/InkButton";
 import { InkCard } from "../components/InkCard";
 import { LoadingAnimation } from "../components/LoadingAnimation";
 import { MarkdownRenderer } from "../components/MarkdownRenderer";
+import { DivinationAssistChat } from "../components/DivinationAssistChat";
 import type { DivinationHistoryDetail, MeihuaDivinationResponse, ZiweiDivinationResponse } from "../types";
 
 export default function DivinationRecordPage() {
@@ -95,6 +96,11 @@ export default function DivinationRecordPage() {
           <InkCard title="命盘摘要">
             <pre className="pre-wrap">{ziweiResult.chart_summary || ""}</pre>
           </InkCard>
+          <DivinationAssistChat
+            mode="ziwei"
+            sourceTitle={detail.question_text || "紫微斗数历史记录解签"}
+            sourceText={`${ziweiResult.reading || ""}\n\n命盘摘要：\n${ziweiResult.chart_summary || ""}`}
+          />
         </>
       ) : null}
 
@@ -125,6 +131,11 @@ export default function DivinationRecordPage() {
               <MarkdownRenderer content={meihuaResult.reading || ""} />
             </div>
           </InkCard>
+          <DivinationAssistChat
+            mode="meihua"
+            sourceTitle={detail.question_text || "梅花易数历史记录解签"}
+            sourceText={`${meihuaResult.reading || ""}\n\n起卦信息：${JSON.stringify(meihuaResult.gua || {}, null, 2)}`}
+          />
         </>
       ) : null}
     </div>

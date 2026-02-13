@@ -320,8 +320,8 @@ export const getMe = async () =>
 export const logout = async () =>
   unwrap(await api.post<ApiResponse<{ ok: boolean }>>("/auth/logout"));
 
-export const getAdminDashboard = async () =>
-  unwrap(await api.get<ApiResponse<AdminDashboardData>>("/admin/dashboard"));
+export const getAdminDashboard = async (range: "24h" | "7d" | "30d" = "24h") =>
+  unwrap(await api.get<ApiResponse<AdminDashboardData>>(`/admin/dashboard?range=${range}`));
 
 export const getAdminLogs = async (page = 1, pageSize = 50) =>
   unwrap(await api.get<ApiResponse<SystemLogResponse>>(`/admin/logs?page=${page}&page_size=${pageSize}`));

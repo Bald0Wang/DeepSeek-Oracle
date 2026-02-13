@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { InkButton } from "../components/InkButton";
 import { InkCard } from "../components/InkCard";
 import { MarkdownRenderer } from "../components/MarkdownRenderer";
+import { DivinationAssistChat } from "../components/DivinationAssistChat";
 import {
   clearZiweiFortuneError,
   getZiweiFortuneSessionState,
@@ -185,6 +186,12 @@ export default function ZiweiFortunePage() {
           <InkCard title="命盘摘要">
             <pre className="pre-wrap">{session.result.chart_summary}</pre>
           </InkCard>
+
+          <DivinationAssistChat
+            mode="ziwei"
+            sourceTitle={session.form.question || "紫微斗数求签"}
+            sourceText={`${session.result.reading}\n\n命盘摘要：\n${session.result.chart_summary}`}
+          />
         </div>
       ) : null}
     </div>

@@ -12,7 +12,10 @@ admin_bp = Blueprint("admin", __name__)
 @admin_bp.get("/admin/dashboard")
 @require_auth(admin_only=True)
 def dashboard():
-    data = get_admin_service().get_dashboard()
+    range_key = str(request.args.get("range", "24h")).strip().lower()
+    if range_key not in {"24h", "7d", "30d"}:
+        raise validation_error("range", "range must be one of 24h/7d/30d")
+    data = get_admin_service().get_dashboard(range_key=range_key)
     return success_response(data=data)
 
 

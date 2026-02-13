@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { InkButton } from "../components/InkButton";
 import { InkCard } from "../components/InkCard";
 import { MarkdownRenderer } from "../components/MarkdownRenderer";
+import { DivinationAssistChat } from "../components/DivinationAssistChat";
 import {
   clearMeihuaFortuneError,
   getMeihuaFortuneSessionState,
@@ -155,6 +156,12 @@ export default function MeihuaFortunePage() {
               </Link>
             </div>
           </InkCard>
+
+          <DivinationAssistChat
+            mode="meihua"
+            sourceTitle={session.form.topic || "梅花易数求签"}
+            sourceText={`${session.result.reading}\n\n起卦信息：${JSON.stringify(session.result.gua, null, 2)}`}
+          />
         </div>
       ) : null}
     </div>

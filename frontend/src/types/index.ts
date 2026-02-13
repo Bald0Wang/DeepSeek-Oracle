@@ -307,9 +307,16 @@ export interface AdminUserListResponse {
 }
 
 export interface AdminDashboardData {
+  trend_range: "24h" | "7d" | "30d";
   user_metrics: {
     total_users: number;
     admin_users: number;
+    active_users_last_24h: number;
+  };
+  token_metrics: {
+    issued_last_24h: number;
+    logout_last_24h: number;
+    invalid_last_24h: number;
   };
   analysis_metrics: {
     total_tasks: number;
@@ -319,6 +326,27 @@ export interface AdminDashboardData {
     failed_tasks: number;
     total_results: number;
     results_last_24h: number;
+    total_tokens: number;
+    tokens_last_24h: number;
+  };
+  runtime_metrics: {
+    chat: {
+      total_conversations: number;
+      total_turns: number;
+      turns_last_24h: number;
+    };
+    insight: {
+      total_kline_profiles: number;
+      total_calendars: number;
+      kline_updates_last_24h: number;
+      calendar_updates_last_24h: number;
+    };
+    divination: {
+      total_ziwei_runs: number;
+      total_meihua_runs: number;
+      ziwei_runs_last_24h: number;
+      meihua_runs_last_24h: number;
+    };
   };
   log_metrics: {
     total_logs: number;
@@ -326,6 +354,15 @@ export interface AdminDashboardData {
     logs_last_24h: number;
     top_paths: Array<{ path: string; total: number }>;
   };
+  trend: Array<{
+    label: string;
+    analysis_tasks: number;
+    chat_turns: number;
+    kline_updates: number;
+    calendar_updates: number;
+    ziwei_runs: number;
+    meihua_runs: number;
+  }>;
 }
 
 export interface LifeKlineYearPoint {
