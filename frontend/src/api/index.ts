@@ -32,6 +32,9 @@ const api = axios.create({
   baseURL: "/api",
   timeout: 30_000
 });
+// Divination may take longer when charting + LLM reasoning runs in sequence.
+// Use no client-side timeout for these two endpoints; rely on backend/proxy limits.
+const DIVINATION_TIMEOUT_MS = 0;
 
 api.interceptors.request.use((config) => {
   const token = getAccessToken();
@@ -98,10 +101,18 @@ export const oracleChat = async (payload: OracleChatRequest) =>
   unwrap(await api.post<ApiResponse<OracleChatResponse>>("/oracle/chat", payload));
 
 export const divinateZiwei = async (payload: ZiweiDivinationRequest) =>
-  unwrap(await api.post<ApiResponse<ZiweiDivinationResponse>>("/divination/ziwei", payload));
+  unwrap(
+    await api.post<ApiResponse<ZiweiDivinationResponse>>("/divination/ziwei", payload, {
+      timeout: DIVINATION_TIMEOUT_MS,
+    })
+  );
 
 export const divinateMeihua = async (payload: MeihuaDivinationRequest) =>
-  unwrap(await api.post<ApiResponse<MeihuaDivinationResponse>>("/divination/meihua", payload));
+  unwrap(
+    await api.post<ApiResponse<MeihuaDivinationResponse>>("/divination/meihua", payload, {
+      timeout: DIVINATION_TIMEOUT_MS,
+    })
+  );
 
 export const oracleChatStream = async (
   payload: OracleChatRequest,

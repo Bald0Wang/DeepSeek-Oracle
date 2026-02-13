@@ -185,6 +185,28 @@ docker compose --env-file .env.docker up -d --build
 docker compose --env-file .env.docker down
 ```
 
+### 公网服务器部署（80 端口）
+
+如果你要直接对外提供 `http://14.103.128.59/`，可使用仓库新增文件 `docker-compose.public.yml`。
+
+特点：
+
+- 仅开放前端 `80` 端口
+- `backend` 与 `redis` 不直接暴露到公网
+- `CORS_ORIGINS` 默认值改为 `http://14.103.128.59`
+
+启动：
+
+```bash
+docker compose -f docker-compose.public.yml --env-file .env.docker up -d --build
+```
+
+停止：
+
+```bash
+docker compose -f docker-compose.public.yml --env-file .env.docker down
+```
+
 ## 开发辅助 Subagent（安全审查）
 
 已新增一个开发后安全审查 subagent：

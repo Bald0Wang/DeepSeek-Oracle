@@ -49,3 +49,4 @@ fortune_result.md
 .history/
 
 docs/
+docker-compose.public.yml
