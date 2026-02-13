@@ -9,7 +9,7 @@ interface InkCardProps extends PropsWithChildren {
 
 
 export function InkCard({ title, icon, children, className = "" }: InkCardProps) {
-  const cardClassName = ["ink-card", className].filter(Boolean).join(" ");
+  const cardClassName = ["ink-card", "ink-card--ornate", className].filter(Boolean).join(" ");
 
   return (
     <section className={cardClassName}>

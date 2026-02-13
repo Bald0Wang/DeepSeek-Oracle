@@ -41,7 +41,6 @@ export default function MeihuaFortunePage() {
 
     await startMeihuaDivinationTask({
       topic: session.form.topic.trim(),
-      occurred_at: session.form.occurredAt || undefined,
     });
   };
 
@@ -73,16 +72,9 @@ export default function MeihuaFortunePage() {
             </div>
           </div>
 
-          <div className="field">
-            <label className="field__label" htmlFor="meihua-time">起卦时间</label>
-            <input
-              id="meihua-time"
-              type="datetime-local"
-              value={session.form.occurredAt}
-              onChange={(event) => updateMeihuaFortuneForm({ occurredAt: event.target.value })}
-            />
-            <p className="field__hint">梅花起卦采用七周年口径：年/月/日/时推导本卦、动爻与变卦。</p>
-          </div>
+          <p className="field__hint">
+            起卦因子说明：系统会在你点击“开始梅花求签”时，自动使用当前时间起卦（无需手动输入时间）。
+          </p>
 
           {session.error ? <p className="error-text">{session.error}</p> : null}
           {session.loading ? <p className="oracle-chat__tip">任务进行中，切换页面后回来仍会保留状态。</p> : null}

@@ -22,7 +22,9 @@ export interface ZiweiFortuneSessionState {
 
 type Listener = (state: ZiweiFortuneSessionState) => void;
 
-const STORAGE_KEY = "oracle:fortune:ziwei:v1";
+const STORAGE_KEY_BASE = "oracle:fortune:ziwei:v2";
+const LEGACY_STORAGE_KEY = "oracle:fortune:ziwei:v1";
+const USER_KEY = "oracle:current_user";
 const listeners = new Set<Listener>();
 
 const defaultState: ZiweiFortuneSessionState = {
@@ -42,20 +44,60 @@ const defaultState: ZiweiFortuneSessionState = {
   activeRequestId: null,
 };
 
-const parsePersistedState = (): Partial<ZiweiFortuneSessionState> | null => {
+const resolveStorageKey = (): string => {
+  if (typeof window === "undefined") {
+    return STORAGE_KEY_BASE;
+  }
+  try {
+    const raw = window.localStorage.getItem(USER_KEY);
+    if (!raw) {
+      return STORAGE_KEY_BASE;
+    }
+    const user = JSON.parse(raw) as { id?: number | string };
+    const userId = String(user?.id || "").trim();
+    if (!userId) {
+      return STORAGE_KEY_BASE;
+    }
+    return `${STORAGE_KEY_BASE}:${userId}`;
+  } catch {
+    return STORAGE_KEY_BASE;
+  }
+};
+
+const normalizeForm = (value: Partial<ZiweiFortuneFormState> | null | undefined): ZiweiFortuneFormState => ({
+  question: typeof value?.question === "string" ? value.question : defaultState.form.question,
+  calendar: value?.calendar === "solar" ? "solar" : "lunar",
+  year: typeof value?.year === "string" ? value.year : defaultState.form.year,
+  month: typeof value?.month === "string" ? value.month : defaultState.form.month,
+  day: typeof value?.day === "string" ? value.day : defaultState.form.day,
+  hour: typeof value?.hour === "string" ? value.hour : defaultState.form.hour,
+  minute: typeof value?.minute === "string" ? value.minute : defaultState.form.minute,
+  gender: value?.gender === "女" ? "女" : "男",
+});
+
+const parsePersistedForm = (): ZiweiFortuneFormState | null => {
   if (typeof window === "undefined") {
     return null;
   }
+  const storageKey = resolveStorageKey();
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(storageKey);
     if (!raw) {
+      const legacyRaw = window.localStorage.getItem(LEGACY_STORAGE_KEY);
+      if (!legacyRaw) {
+        return null;
+      }
+      const legacyParsed = JSON.parse(legacyRaw) as { form?: Partial<ZiweiFortuneFormState> };
+      const legacyForm = normalizeForm(legacyParsed?.form);
+      window.localStorage.setItem(storageKey, JSON.stringify({ form: legacyForm }));
+      window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+      return legacyForm;
+    }
+    const parsed = JSON.parse(raw) as { form?: Partial<ZiweiFortuneFormState> };
+    if (!parsed || typeof parsed !== "object" || !parsed.form) {
       return null;
     }
-    const parsed = JSON.parse(raw) as Partial<ZiweiFortuneSessionState>;
-    if (!parsed || typeof parsed !== "object") {
-      return null;
-    }
-    return parsed;
+    return normalizeForm(parsed.form);
   } catch {
     return null;
   }
@@ -66,11 +108,11 @@ const persistState = (state: ZiweiFortuneSessionState) => {
     return;
   }
   try {
+    const storageKey = resolveStorageKey();
     window.localStorage.setItem(
-      STORAGE_KEY,
+      storageKey,
       JSON.stringify({
         form: state.form,
-        result: state.result,
       })
     );
   } catch {
@@ -78,16 +120,12 @@ const persistState = (state: ZiweiFortuneSessionState) => {
   }
 };
 
-const persistedState = parsePersistedState();
+const persistedForm = parsePersistedForm();
 
 let sessionState: ZiweiFortuneSessionState = {
   ...defaultState,
-  ...persistedState,
-  form: {
-    ...defaultState.form,
-    ...(persistedState?.form || {}),
-  },
-  result: persistedState?.result || null,
+  form: persistedForm || defaultState.form,
+  result: null,
   loading: false,
   error: null,
   activeRequestId: null,

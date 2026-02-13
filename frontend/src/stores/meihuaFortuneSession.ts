@@ -1,19 +1,8 @@
 import { divinateMeihua } from "../api";
 import type { MeihuaDivinationRequest, MeihuaDivinationResponse } from "../types";
 
-const currentLocalDateTime = () => {
-  const now = new Date();
-  const yyyy = now.getFullYear();
-  const mm = String(now.getMonth() + 1).padStart(2, "0");
-  const dd = String(now.getDate()).padStart(2, "0");
-  const hh = String(now.getHours()).padStart(2, "0");
-  const mi = String(now.getMinutes()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
-};
-
 export interface MeihuaFortuneFormState {
   topic: string;
-  occurredAt: string;
 }
 
 export interface MeihuaFortuneSessionState {
@@ -32,7 +21,6 @@ const listeners = new Set<Listener>();
 const defaultState: MeihuaFortuneSessionState = {
   form: {
     topic: "这周是否适合推进岗位调整？",
-    occurredAt: currentLocalDateTime(),
   },
   loading: false,
   error: null,

@@ -80,7 +80,7 @@ export default function RegisterPage({ onAuthSuccess }: RegisterPageProps) {
       }
       setAuthData(res.data.token, res.data.user);
       onAuthSuccess?.(res.data.user);
-      navigate(res.data.user.role === "admin" ? "/admin/dashboard" : "/oracle", { replace: true });
+      navigate(res.data.user.role === "admin" ? "/admin/dashboard" : "/start-analysis", { replace: true });
     } catch (err) {
       const apiMessage = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setError(apiMessage || (err instanceof Error ? err.message : "注册失败，请稍后重试。"));

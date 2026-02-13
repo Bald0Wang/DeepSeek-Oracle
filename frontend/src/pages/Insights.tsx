@@ -24,8 +24,15 @@ export default function InsightsPage() {
       const response = await getInsightOverview(resultId);
       setData(response.data || null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "加载人生线与日历失败。");
-      setData(null);
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 404) {
+        // No analysis profile yet: treat as empty state instead of hard error.
+        setData(null);
+        setError(null);
+      } else {
+        setError(err instanceof Error ? err.message : "加载人生线与日历失败。");
+        setData(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -183,7 +190,7 @@ export default function InsightsPage() {
 
       <InkCard title="快捷入口" icon="捷">
         <div className="actions-row">
-          <Link to="/">
+          <Link to="/start-analysis">
             <InkButton type="button" kind="ghost">返回开始分析</InkButton>
           </Link>
           <Link to="/history">

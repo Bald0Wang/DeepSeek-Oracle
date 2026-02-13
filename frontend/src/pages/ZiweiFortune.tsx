@@ -11,19 +11,8 @@ import {
   subscribeZiweiFortuneSession,
   updateZiweiFortuneForm,
 } from "../stores/ziweiFortuneSession";
+import { formatBirthPreview, toBirthInfo, validateBirthForm } from "../utils/birthForm";
 import type { BirthInfo } from "../types";
-
-const pad2 = (value: number) => String(value).padStart(2, "0");
-
-const hourToTimezone = (hour: number) => {
-  if (hour === 23) {
-    return 12;
-  }
-  if (hour === 0) {
-    return 0;
-  }
-  return Math.floor((hour + 1) / 2);
-};
 
 export default function ZiweiFortunePage() {
   const [session, setSession] = useState(getZiweiFortuneSessionState());
@@ -36,73 +25,22 @@ export default function ZiweiFortunePage() {
   }, []);
 
   const inputPreview = useMemo(() => {
-    const y = Number(session.form.year) || 0;
-    const m = Number(session.form.month) || 0;
-    const d = Number(session.form.day) || 0;
-    const h = Number(session.form.hour) || 0;
-    const min = Number(session.form.minute) || 0;
-    return `${session.form.calendar === "lunar" ? "阴历" : "阳历"} ${y}年${m}月${d}日 ${pad2(h)}:${pad2(min)} ${session.form.gender}`;
-  }, [
-    session.form.calendar,
-    session.form.day,
-    session.form.gender,
-    session.form.hour,
-    session.form.minute,
-    session.form.month,
-    session.form.year,
-  ]);
+    return formatBirthPreview(session.form);
+  }, [session.form]);
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     clearZiweiFortuneError();
 
-    const yearNumber = Number(session.form.year);
-    const monthNumber = Number(session.form.month);
-    const dayNumber = Number(session.form.day);
-    const hourNumber = Number(session.form.hour);
-    const minuteNumber = Number(session.form.minute);
-
-    if ([yearNumber, monthNumber, dayNumber, hourNumber, minuteNumber].some((value) => Number.isNaN(value))) {
-      setZiweiFortuneError("请完整填写出生年月日和时间。");
-      return;
-    }
-    if (yearNumber < 1900 || yearNumber > 2100) {
-      setZiweiFortuneError("年份范围建议在 1900-2100。");
-      return;
-    }
-    if (monthNumber < 1 || monthNumber > 12) {
-      setZiweiFortuneError("月份范围应为 1-12。");
-      return;
-    }
-    if (session.form.calendar === "lunar") {
-      if (dayNumber < 1 || dayNumber > 30) {
-        setZiweiFortuneError("阴历日期范围应为 1-30。");
-        return;
-      }
-    } else {
-      const temp = new Date(yearNumber, monthNumber - 1, dayNumber);
-      const isValidSolarDate =
-        temp.getFullYear() === yearNumber
-        && temp.getMonth() === monthNumber - 1
-        && temp.getDate() === dayNumber;
-      if (!isValidSolarDate) {
-        setZiweiFortuneError("阳历日期无效，请检查年月日。");
-        return;
-      }
-    }
-    if (hourNumber < 0 || hourNumber > 23 || minuteNumber < 0 || minuteNumber > 59) {
-      setZiweiFortuneError("时间无效，请使用 24 小时制。");
+    const validationError = validateBirthForm(session.form);
+    if (validationError) {
+      setZiweiFortuneError(validationError);
       return;
     }
 
     await startZiweiDivinationTask({
       question: session.form.question.trim() || "请给我一份紫微斗数长线解读与行动建议。",
-      birth_info: {
-        date: `${yearNumber}-${pad2(monthNumber)}-${pad2(dayNumber)}`,
-        timezone: hourToTimezone(hourNumber),
-        gender: session.form.gender,
-        calendar: session.form.calendar,
-      },
+      birth_info: toBirthInfo(session.form),
     });
   };
 

@@ -11,7 +11,7 @@ import {
   type OracleConversationTurn,
   type OracleThinkingItem,
 } from "../stores/oracleChatSession";
-import type { OracleChatRequest } from "../types";
+import type { EnabledSchool, OracleChatRequest } from "../types";
 
 const DISCLAIMER_LABELS: Record<"none" | "light" | "strong", string> = {
   none: "普通提示",
@@ -26,7 +26,34 @@ const QUICK_PROMPTS = [
 ];
 
 const ORACLE_QUERY_DRAFT_KEY = "oracle:chat:query_draft";
+const ORACLE_AGENT_PREF_KEY = "oracle:chat:enabled_agents";
 const AUTO_HISTORY_MAX_TURNS = 4;
+const AGENT_OPTIONS: Array<{ id: EnabledSchool; label: string; desc: string }> = [
+  { id: "ziwei", label: "紫微斗数", desc: "长期趋势" },
+  { id: "meihua", label: "梅花易数", desc: "短期应对" },
+  { id: "philosophy", label: "心学心法", desc: "情绪与行动修正" },
+];
+
+const loadEnabledAgents = (): EnabledSchool[] => {
+  const fallback: EnabledSchool[] = ["ziwei", "meihua", "philosophy"];
+  const raw = window.sessionStorage.getItem(ORACLE_AGENT_PREF_KEY);
+  if (!raw) {
+    return fallback;
+  }
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      return fallback;
+    }
+    const allowed = AGENT_OPTIONS.map((option) => option.id);
+    const normalized = parsed
+      .map((item) => String(item))
+      .filter((item): item is EnabledSchool => allowed.includes(item as EnabledSchool));
+    return normalized.length ? normalized : fallback;
+  } catch {
+    return fallback;
+  }
+};
 
 const statusLabel = (status: OracleThinkingItem["status"]) => {
   if (status === "running") {
@@ -76,8 +103,8 @@ export default function OracleChatPage() {
   const [chatSession, setChatSession] = useState(getOracleChatSessionState());
   const [selectedTurnId, setSelectedTurnId] = useState<string | null>(null);
   const [userQuery, setUserQuery] = useState(() => window.sessionStorage.getItem(ORACLE_QUERY_DRAFT_KEY) || "");
+  const [enabledAgents, setEnabledAgents] = useState<EnabledSchool[]>(() => loadEnabledAgents());
   const [localError, setLocalError] = useState<string | null>(null);
-  const [formTip] = useState<string | null>("左侧历史，中央对话，右侧思路。输入框只保留一个。");
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
@@ -90,6 +117,10 @@ export default function OracleChatPage() {
   useEffect(() => {
     window.sessionStorage.setItem(ORACLE_QUERY_DRAFT_KEY, userQuery);
   }, [userQuery]);
+
+  useEffect(() => {
+    window.sessionStorage.setItem(ORACLE_AGENT_PREF_KEY, JSON.stringify(enabledAgents));
+  }, [enabledAgents]);
 
   useEffect(() => {
     if (chatSession.activeTurnId) {
@@ -120,13 +151,34 @@ export default function OracleChatPage() {
       return;
     }
 
+    if (!enabledAgents.length) {
+      setLocalError("至少启用一个智能体后再发送问题。");
+      return;
+    }
+
     const payload: OracleChatRequest = {
       user_query: query,
       conversation_history_summary: buildAutoHistorySummary(chatSession.turns) || undefined,
+      selected_school: "east",
+      enabled_schools: enabledAgents,
     };
 
     setUserQuery("");
     void startOracleChatSession(payload);
+  };
+
+  const toggleAgent = (agentId: EnabledSchool) => {
+    setLocalError(null);
+    setEnabledAgents((prev) => {
+      if (prev.includes(agentId)) {
+        if (prev.length === 1) {
+          setLocalError("至少保留一个智能体。");
+          return prev;
+        }
+        return prev.filter((item) => item !== agentId);
+      }
+      return [...prev, agentId];
+    });
   };
 
   return (
@@ -245,11 +297,31 @@ export default function OracleChatPage() {
                     </button>
                   ))}
                 </div>
+                <p className="oracle-chat__agent-toggle-title">智能体配置（可多选）</p>
+                <div className="oracle-chat__agent-toggle-row" aria-label="智能体配置">
+                  {AGENT_OPTIONS.map((agent) => {
+                    const active = enabledAgents.includes(agent.id);
+                    return (
+                      <button
+                        key={agent.id}
+                        type="button"
+                        className={`oracle-agent-toggle ${active ? "oracle-agent-toggle--active" : ""}`}
+                        onClick={() => toggleAgent(agent.id)}
+                        aria-pressed={active}
+                      >
+                        <span className="oracle-agent-toggle__title">{agent.label}</span>
+                        <span className="oracle-agent-toggle__desc">{agent.desc}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="oracle-chat__tip">
+                  已启用智能体：{enabledAgents.map((item) => AGENT_OPTIONS.find((opt) => opt.id === item)?.label || item).join("、")}
+                </p>
               </div>
 
               {localError ? <p className="error-text">{localError}</p> : null}
               {!localError && chatSession.error ? <p className="error-text">{chatSession.error}</p> : null}
-              {formTip ? <p className="oracle-chat__tip">{formTip}</p> : null}
               {chatSession.loading ? <p className="oracle-chat__tip">当前轮次正在执行，可继续等待返回。</p> : null}
 
               <div className="actions-row">

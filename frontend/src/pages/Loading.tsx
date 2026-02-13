@@ -5,11 +5,11 @@ import { InkButton } from "../components/InkButton";
 import { InkCard } from "../components/InkCard";
 import { LoadingAnimation } from "../components/LoadingAnimation";
 import { useAnalysis } from "../hooks/useAnalysis";
+import { clearLastTaskId, getLastTaskId, setLastTaskId } from "../utils/taskResume";
 import type { TaskData } from "../types";
 
 
 const TERMINAL_STATUS = new Set(["succeeded", "failed", "cancelled"]);
-const LAST_TASK_KEY = "oracle:last_task_id";
 
 const STEP_LABELS: Record<string, string> = {
   queued: "等待排队",
@@ -38,10 +38,11 @@ export default function LoadingPage() {
   );
 
   const reusedTask = Boolean((location.state as { reusedTask?: boolean } | null)?.reusedTask);
+  const resumedTask = Boolean((location.state as { resumed?: boolean } | null)?.resumed);
 
   useEffect(() => {
     if (!taskId) {
-      const lastTaskId = window.localStorage.getItem(LAST_TASK_KEY);
+      const lastTaskId = getLastTaskId();
       if (lastTaskId) {
         navigate(`/loading/${lastTaskId}`, { replace: true });
         return;
@@ -53,7 +54,7 @@ export default function LoadingPage() {
       return;
     }
 
-    window.localStorage.setItem(LAST_TASK_KEY, taskId);
+    setLastTaskId(taskId);
 
     let active = true;
     let timer: number | null = null;
@@ -69,7 +70,7 @@ export default function LoadingPage() {
         setError(null);
 
         if (data.status === "succeeded" && data.result_id) {
-          window.localStorage.removeItem(LAST_TASK_KEY);
+          clearLastTaskId();
           navigate(`/result/${data.result_id}`, { replace: true });
           return;
         }
@@ -138,6 +139,7 @@ export default function LoadingPage() {
           <p className="task-chip">任务 ID: {taskId}</p>
 
           {reusedTask && <p className="step-info">检测到相同命盘输入，已复用进行中的分析任务。</p>}
+          {resumedTask && <p className="step-info">已自动恢复上次进行中的分析任务。</p>}
 
           {taskData?.error && <p className="error-text">{taskData.error.message}</p>}
           {error && <p className="error-text">{error}</p>}

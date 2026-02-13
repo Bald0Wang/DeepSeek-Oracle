@@ -70,7 +70,13 @@ export function Layout({ user, authReady, onLogout }: LayoutProps) {
           {user ? (
             <>
               <NavLink to="/" end className={({ isActive }) => isActive ? "active" : ""}>
+                项目首页
+              </NavLink>
+              <NavLink to="/start-analysis" className={({ isActive }) => isActive ? "active" : ""}>
                 开始分析
+              </NavLink>
+              <NavLink to="/home-variants" className={({ isActive }) => isActive ? "active" : ""}>
+                首页风格
               </NavLink>
               <NavLink to="/oracle" className={({ isActive }) => isActive ? "active" : ""}>
                 咨询对话
@@ -94,9 +100,14 @@ export function Layout({ user, authReady, onLogout }: LayoutProps) {
               ) : null}
             </>
           ) : (
-            <NavLink to="/login" className={({ isActive }) => isActive ? "active" : ""}>
-              用户登录
-            </NavLink>
+            <>
+              <NavLink to="/login" className={({ isActive }) => isActive ? "active" : ""}>
+                用户登录
+              </NavLink>
+              <NavLink to="/register" className={({ isActive }) => isActive ? "active" : ""}>
+                邮箱注册
+              </NavLink>
+            </>
           )}
         </nav>
         <div className="top-nav__auth">
