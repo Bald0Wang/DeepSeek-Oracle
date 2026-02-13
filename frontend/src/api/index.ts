@@ -14,13 +14,17 @@ import type {
   BirthInfo,
   HistoryResponseData,
   InsightOverviewData,
+  MeihuaDivinationRequest,
+  MeihuaDivinationResponse,
   OracleChatRequest,
   OracleChatResponse,
   OracleStreamEvent,
   ResetPasswordRequest,
   SubmitAnalysisData,
   SystemLogResponse,
-  TaskData
+  TaskData,
+  ZiweiDivinationRequest,
+  ZiweiDivinationResponse,
 } from "../types";
 import { clearAuthData, getAccessToken } from "../utils/auth";
 
@@ -92,6 +96,12 @@ export const exportReport = async (id: number, scope = "full") =>
 
 export const oracleChat = async (payload: OracleChatRequest) =>
   unwrap(await api.post<ApiResponse<OracleChatResponse>>("/oracle/chat", payload));
+
+export const divinateZiwei = async (payload: ZiweiDivinationRequest) =>
+  unwrap(await api.post<ApiResponse<ZiweiDivinationResponse>>("/divination/ziwei", payload));
+
+export const divinateMeihua = async (payload: MeihuaDivinationRequest) =>
+  unwrap(await api.post<ApiResponse<MeihuaDivinationResponse>>("/divination/meihua", payload));
 
 export const oracleChatStream = async (
   payload: OracleChatRequest,

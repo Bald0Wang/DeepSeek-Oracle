@@ -1,4 +1,5 @@
 from .analysis import validate_analyze_payload
+from .divination import validate_meihua_divination_payload, validate_ziwei_divination_payload
 from .auth import (
     validate_admin_code_login_payload,
     validate_forgot_password_payload,
@@ -12,6 +13,8 @@ from .oracle_chat import validate_oracle_chat_payload
 
 __all__ = [
     "validate_analyze_payload",
+    "validate_ziwei_divination_payload",
+    "validate_meihua_divination_payload",
     "validate_oracle_chat_payload",
     "validate_send_admin_login_code_payload",
     "validate_admin_code_login_payload",

@@ -14,9 +14,11 @@ import HomePage from "./pages/Home";
 import InsightsPage from "./pages/Insights";
 import LoginPage from "./pages/Login";
 import LoadingPage from "./pages/Loading";
+import MeihuaFortunePage from "./pages/MeihuaFortune";
 import OracleChatPage from "./pages/OracleChat";
 import RegisterPage from "./pages/Register";
 import ResultPage from "./pages/Result";
+import ZiweiFortunePage from "./pages/ZiweiFortune";
 
 interface GuardProps {
   authReady: boolean;
@@ -148,6 +150,8 @@ export default function App() {
           <Route element={<RequireAuth authReady={authReady} user={activeUser} />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/oracle" element={<OracleChatPage />} />
+            <Route path="/ziwei" element={<ZiweiFortunePage />} />
+            <Route path="/meihua" element={<MeihuaFortunePage />} />
             <Route path="/loading/:taskId" element={<LoadingPage />} />
             <Route path="/result/:id" element={<ResultPage />} />
             <Route path="/result/:id/:type" element={<DetailPage />} />

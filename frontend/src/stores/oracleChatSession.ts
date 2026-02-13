@@ -18,6 +18,7 @@ export interface OracleThinkingItem {
 export interface OracleConversationTurn {
   id: string;
   query: string;
+  contextSummary: string;
   createdAt: number;
   status: "running" | "succeeded" | "failed";
   planSteps: OracleThinkingItem[];
@@ -146,6 +147,7 @@ export const startOracleChatSession = async (payload: OracleChatRequest) => {
   const newTurn: OracleConversationTurn = {
     id: turnId,
     query: payload.user_query,
+    contextSummary: String(payload.conversation_history_summary || "").trim(),
     createdAt: Date.now(),
     status: "running",
     planSteps: [],

@@ -81,6 +81,12 @@ export function Layout({ user, authReady, onLogout }: LayoutProps) {
               <NavLink to="/insights" className={({ isActive }) => isActive ? "active" : ""}>
                 人生线/日历
               </NavLink>
+              <NavLink to="/ziwei" className={({ isActive }) => isActive ? "active" : ""}>
+                紫微求签
+              </NavLink>
+              <NavLink to="/meihua" className={({ isActive }) => isActive ? "active" : ""}>
+                梅花求签
+              </NavLink>
               {user.role === "admin" ? (
                 <NavLink to="/admin/dashboard" className={({ isActive }) => isActive ? "active" : ""}>
                   管理后台
@@ -106,7 +112,7 @@ export function Layout({ user, authReady, onLogout }: LayoutProps) {
         </div>
       </header>
 
-      <main className="app-main">
+      <main className={`app-main ${location.pathname === "/oracle" ? "app-main--oracle" : ""}`}>
         <Outlet />
       </main>
 

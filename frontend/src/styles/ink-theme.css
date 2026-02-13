@@ -2218,7 +2218,228 @@ summary:focus-visible {
     width: 100%;
   }
 
-  .analysis-card__actions a .ink-button {
+.analysis-card__actions a .ink-button {
     width: 100%;
+  }
+}
+
+.app-main--oracle {
+  width: calc(100% - 0.75rem);
+  max-width: none;
+  padding: 0.75rem 0 1.75rem;
+}
+
+/* Oracle chat workspace layout (history | chat | thinking) */
+.oracle-chat__workspace {
+  display: grid;
+  grid-template-columns: 16rem minmax(0, 1fr) 19rem;
+  gap: 1.25rem;
+  min-height: min(82vh, 58rem);
+}
+
+.oracle-chat--flat .ink-card {
+  padding: 1rem;
+  border-radius: 1.25rem;
+}
+
+.oracle-chat--flat .ink-card__header {
+  margin-bottom: 0.75rem;
+}
+
+.oracle-chat--flat .ink-card__content {
+  gap: 0.75rem;
+}
+
+.oracle-chat__sidebar,
+.oracle-chat__main,
+.oracle-chat__inspector {
+  border: 1px solid rgba(191, 149, 94, 0.24);
+  border-radius: var(--radius-md);
+  background: linear-gradient(165deg, rgba(37, 21, 15, 0.84), rgba(28, 16, 12, 0.8));
+  box-shadow: inset 0 0.0625rem 0 rgba(255, 226, 185, 0.08);
+}
+
+.oracle-chat__sidebar,
+.oracle-chat__inspector {
+  padding: 0.8125rem;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 0.75rem;
+}
+
+.oracle-chat__main {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-width: 0;
+}
+
+.oracle-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.oracle-panel__header h3 {
+  margin: 0;
+  color: #f3dfbe;
+  font-family: "ZCOOL XiaoWei", "Noto Serif SC", serif;
+  font-size: 1.05rem;
+  letter-spacing: 0.03em;
+}
+
+.oracle-panel__header span {
+  color: rgba(224, 193, 152, 0.88);
+  font-size: 0.75rem;
+}
+
+.oracle-history__list {
+  overflow: auto;
+  display: grid;
+  gap: 0.5rem;
+  align-content: start;
+}
+
+.oracle-history__empty {
+  color: rgba(219, 186, 145, 0.82);
+  font-size: 0.8125rem;
+  border: 1px dashed rgba(194, 151, 94, 0.32);
+  border-radius: var(--radius-sm);
+  padding: 0.6875rem;
+}
+
+.oracle-history__item {
+  cursor: pointer;
+  text-align: left;
+  border: 1px solid rgba(186, 145, 90, 0.26);
+  border-radius: var(--radius-sm);
+  background: rgba(46, 27, 20, 0.72);
+  padding: 0.625rem;
+  display: grid;
+  gap: 0.25rem;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.oracle-history__item:hover {
+  border-color: rgba(215, 174, 115, 0.5);
+  background: rgba(63, 36, 25, 0.78);
+}
+
+.oracle-history__item--active {
+  border-color: rgba(224, 183, 124, 0.68);
+  background: rgba(78, 44, 30, 0.86);
+}
+
+.oracle-history__title {
+  color: #f1debe;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+.oracle-history__meta {
+  color: rgba(213, 181, 140, 0.82);
+  font-size: 0.75rem;
+}
+
+.oracle-chat__thread {
+  max-height: none;
+  min-height: 0;
+  border: 0;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  background: linear-gradient(180deg, rgba(34, 19, 14, 0.75), rgba(28, 16, 12, 0.66));
+  padding: 1.125rem;
+}
+
+.oracle-turn {
+  cursor: pointer;
+}
+
+.oracle-turn--selected .oracle-turn__bubble--assistant,
+.oracle-turn--selected .oracle-turn__bubble--user {
+  border-color: rgba(222, 179, 119, 0.56);
+}
+
+.oracle-chat__composer {
+  border-top: 1px solid rgba(191, 149, 94, 0.24);
+  padding: 1.125rem;
+  background: rgba(27, 16, 12, 0.74);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.oracle-chat__prompt-row {
+  margin-top: 0.6875rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+}
+
+.oracle-turn__context {
+  border: 1px solid rgba(189, 146, 90, 0.2);
+  border-radius: var(--radius-sm);
+  background: rgba(55, 32, 23, 0.46);
+  color: rgba(230, 202, 163, 0.88);
+  font-size: 0.78rem;
+  line-height: 1.55;
+  padding: 0.5rem 0.625rem;
+}
+
+.oracle-inspector__content {
+  overflow: auto;
+  display: grid;
+  gap: 0.625rem;
+  align-content: start;
+}
+
+.oracle-inspector__meta {
+  color: rgba(220, 189, 148, 0.85);
+  font-size: 0.8125rem;
+}
+
+.oracle-chat__inspector .oracle-turn__plan-item {
+  background: rgba(56, 32, 23, 0.62);
+}
+
+@media (max-width: 90rem) {
+  .oracle-chat__workspace {
+    grid-template-columns: 14rem minmax(0, 1fr) 16.25rem;
+  }
+}
+
+@media (max-width: 75rem) {
+  .oracle-chat__workspace {
+    grid-template-columns: 14rem minmax(0, 1fr);
+  }
+
+  .oracle-chat__inspector {
+    grid-column: 1 / -1;
+    min-height: 12rem;
+  }
+}
+
+@media (max-width: 56.25rem) {
+  .oracle-chat__workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .oracle-chat__sidebar,
+  .oracle-chat__inspector,
+  .oracle-chat__main {
+    min-height: auto;
+  }
+
+  .oracle-history__list {
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(13rem, 1fr);
+    overflow-x: auto;
+    overflow-y: hidden;
+    align-content: stretch;
+  }
+
+  .oracle-chat__thread {
+    max-height: min(50vh, 26rem);
+  }
+
+  .app-main--oracle {
+    width: calc(100% - 0.5rem);
   }
 }

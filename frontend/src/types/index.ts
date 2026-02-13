@@ -321,3 +321,61 @@ export interface InsightOverviewData {
     near_30_days: MonthlyCalendarDay[];
   };
 }
+
+export interface ZiweiDivinationRequest {
+  question: string;
+  birth_info: BirthInfo;
+  provider?: string;
+  model?: string;
+}
+
+export interface ZiweiDivinationResponse {
+  question: string;
+  birth_info: BirthInfo;
+  chart_summary: string;
+  reading: string;
+  provider: string;
+  model: string;
+  generated_at: string;
+}
+
+export interface MeihuaDivinationRequest {
+  topic: string;
+  occurred_at?: string;
+  provider?: string;
+  model?: string;
+}
+
+export interface MeihuaDivinationResponse {
+  topic: string;
+  occurred_at: string;
+  method: string;
+  gua: {
+    seed: number;
+    upper_trigram: string;
+    lower_trigram: string;
+    base_gua: string;
+    mutual_gua?: string;
+    changed_gua: string;
+    moving_line: number;
+    moving_line_name: string;
+    base_line_pattern: string;
+    changed_line_pattern: string;
+    symbol: string;
+    element_hint: string;
+    ti_gua?: string;
+    yong_gua?: string;
+    relation?: string;
+    formula_inputs?: {
+      year: number;
+      month: number;
+      day: number;
+      hour: number;
+      topic_length: number;
+    };
+  };
+  reading: string;
+  provider: string;
+  model: string;
+  generated_at: string;
+}
