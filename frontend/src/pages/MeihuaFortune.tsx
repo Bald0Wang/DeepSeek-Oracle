@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 
 import { InkButton } from "../components/InkButton";
 import { InkCard } from "../components/InkCard";
@@ -140,6 +141,18 @@ export default function MeihuaFortunePage() {
           <InkCard title="梅花解读结果" icon="解">
             <div className="markdown-body">
               <MarkdownRenderer content={session.result.reading} />
+            </div>
+            <div className="actions-row">
+              {session.result.record_id ? (
+                <Link to={`/history/divination/${session.result.record_id}`}>
+                  <InkButton type="button" kind="ghost">查看已存档记录</InkButton>
+                </Link>
+              ) : (
+                <InkButton type="button" kind="ghost" disabled>记录存储中</InkButton>
+              )}
+              <Link to="/history">
+                <InkButton type="button" kind="secondary">打开历史存储桶</InkButton>
+              </Link>
             </div>
           </InkCard>
         </div>

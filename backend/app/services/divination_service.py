@@ -8,8 +8,9 @@ from typing import Any
 from flask import current_app
 
 from app.llm_providers import create_provider
+from app.models import DivinationRepo
 from app.services.ziwei_service import ZiweiService
-from app.utils.errors import AppError
+from app.utils.errors import AppError, business_error
 
 
 @dataclass(frozen=True)
@@ -45,8 +46,10 @@ class DivinationService:
         request_timeout_s: int,
         llm_max_retries: int,
         provider_config: dict[str, Any],
+        database_path: str,
     ):
         self.ziwei_service = ZiweiService(izthon_src_path)
+        self.divination_repo = DivinationRepo(database_path)
         self.default_provider = default_provider
         self.default_model = default_model
         self.request_timeout_s = request_timeout_s
@@ -128,6 +131,51 @@ class DivinationService:
             "model": model_name,
             "generated_at": datetime.now().isoformat(timespec="seconds"),
         }
+
+    def save_ziwei_record(self, *, user_id: int, payload: dict[str, Any], result: dict[str, Any]) -> int:
+        return self.divination_repo.create_record(
+            user_id=user_id,
+            divination_type="ziwei",
+            question_text=str(payload.get("question", "")).strip() or "紫微斗数解读",
+            birth_info=payload.get("birth_info"),
+            occurred_at=None,
+            result_payload=result,
+            provider=str(result.get("provider") or self.default_provider),
+            model=str(result.get("model") or self.default_model),
+        )
+
+    def save_meihua_record(self, *, user_id: int, payload: dict[str, Any], result: dict[str, Any]) -> int:
+        return self.divination_repo.create_record(
+            user_id=user_id,
+            divination_type="meihua",
+            question_text=str(payload.get("topic", "")).strip() or "梅花易数解读",
+            birth_info=None,
+            occurred_at=str(result.get("occurred_at") or payload.get("occurred_at") or ""),
+            result_payload=result,
+            provider=str(result.get("provider") or self.default_provider),
+            model=str(result.get("model") or self.default_model),
+        )
+
+    def list_records(
+        self,
+        *,
+        user_id: int,
+        page: int = 1,
+        page_size: int = 20,
+        divination_type: str | None = None,
+    ) -> dict[str, Any]:
+        return self.divination_repo.list_records(
+            user_id=user_id,
+            page=page,
+            page_size=page_size,
+            divination_type=divination_type,
+        )
+
+    def get_record(self, *, record_id: int, user_id: int, is_admin: bool = False) -> dict[str, Any]:
+        data = self.divination_repo.get_record(record_id=record_id, user_id=user_id, is_admin=is_admin)
+        if not data:
+            raise business_error("A4004", "divination record not found", 404, False)
+        return data
 
     def _complete_with_fallback(self, prompt: str, fallback: str, provider_name: str, model_name: str) -> str:
         if provider_name == "mock":
@@ -251,6 +299,7 @@ def get_divination_service() -> DivinationService:
         default_model=current_app.config["LLM_MODEL"],
         request_timeout_s=current_app.config["REQUEST_TIMEOUT_S"],
         llm_max_retries=current_app.config["LLM_MAX_RETRIES"],
+        database_path=current_app.config["DATABASE_PATH"],
         provider_config={
             "LLM_MODEL": current_app.config.get("LLM_MODEL", ""),
             "VOLCANO_API_KEY": current_app.config.get("VOLCANO_API_KEY", ""),

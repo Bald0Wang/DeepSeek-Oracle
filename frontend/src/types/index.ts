@@ -251,6 +251,35 @@ export interface Pagination {
   has_next: boolean;
 }
 
+export type DivinationRecordType = "ziwei" | "meihua";
+
+export interface DivinationHistoryItem {
+  id: number;
+  type: DivinationRecordType;
+  title: string;
+  occurred_at?: string | null;
+  provider: string;
+  model: string;
+  created_at: string;
+}
+
+export interface DivinationHistoryData {
+  items: DivinationHistoryItem[];
+  pagination: Pagination;
+}
+
+export interface DivinationHistoryDetail {
+  id: number;
+  type: DivinationRecordType;
+  question_text: string;
+  birth_info?: BirthInfo | null;
+  occurred_at?: string | null;
+  result: Record<string, unknown>;
+  provider: string;
+  model: string;
+  created_at: string;
+}
+
 export interface SystemLogItem {
   id: number;
   request_id?: string | null;
@@ -358,6 +387,7 @@ export interface ZiweiDivinationRequest {
 }
 
 export interface ZiweiDivinationResponse {
+  record_id?: number;
   question: string;
   birth_info: BirthInfo;
   chart_summary: string;
@@ -375,6 +405,7 @@ export interface MeihuaDivinationRequest {
 }
 
 export interface MeihuaDivinationResponse {
+  record_id?: number;
   topic: string;
   occurred_at: string;
   method: string;

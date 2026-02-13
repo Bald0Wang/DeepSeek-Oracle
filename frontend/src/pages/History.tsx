@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { getHistory } from "../api";
+import { getDivinationHistory, getHistory } from "../api";
 import { InkButton } from "../components/InkButton";
 import { InkCard } from "../components/InkCard";
 import { LoadingAnimation } from "../components/LoadingAnimation";
-import type { HistoryResponseData } from "../types";
+import type { DivinationHistoryData, HistoryResponseData } from "../types";
 
 
 const CALENDAR_LABEL: Record<string, string> = {
@@ -15,23 +15,38 @@ const CALENDAR_LABEL: Record<string, string> = {
 
 
 export default function HistoryPage() {
+  const [bucket, setBucket] = useState<"analysis" | "divination">("analysis");
   const [page, setPage] = useState(1);
-  const [data, setData] = useState<HistoryResponseData | null>(null);
+  const [analysisData, setAnalysisData] = useState<HistoryResponseData | null>(null);
+  const [divinationData, setDivinationData] = useState<DivinationHistoryData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       try {
-        const response = await getHistory(page, 20);
-        if (!response.data) {
-          throw new Error("history is empty");
+        if (bucket === "analysis") {
+          const response = await getHistory(page, 20);
+          if (!response.data) {
+            throw new Error("history is empty");
+          }
+          setAnalysisData(response.data);
+          return;
         }
-        setData(response.data);
+        const response = await getDivinationHistory(page, 20, "all");
+        if (!response.data) {
+          throw new Error("divination history is empty");
+        }
+        setDivinationData(response.data);
       } catch (err) {
         setError(err instanceof Error ? err.message : "获取历史记录失败");
       }
     })();
-  }, [page]);
+  }, [bucket, page]);
+
+  useEffect(() => {
+    setPage(1);
+    setError(null);
+  }, [bucket]);
 
   if (error) {
     return (
@@ -42,14 +57,31 @@ export default function HistoryPage() {
   }
 
   return (
-    <div className="fade-in">
+    <div className="history-page fade-in">
       <InkCard title="历史记录">
-        {!data ? (
+        <div className="insights-segmented" role="tablist" aria-label="历史桶切换">
+          <button
+            type="button"
+            className={bucket === "analysis" ? "active" : ""}
+            onClick={() => setBucket("analysis")}
+          >
+            分析记录
+          </button>
+          <button
+            type="button"
+            className={bucket === "divination" ? "active" : ""}
+            onClick={() => setBucket("divination")}
+          >
+            占卜存储桶
+          </button>
+        </div>
+
+        {(bucket === "analysis" && !analysisData) || (bucket === "divination" && !divinationData) ? (
           <div className="loading-container">
             <LoadingAnimation size="large" />
             <p className="loading-state-text">加载中...</p>
           </div>
-        ) : data.items.length === 0 ? (
+        ) : bucket === "analysis" && analysisData && analysisData.items.length === 0 ? (
           <div className="empty-state">
             <p className="empty-state__title">暂无历史记录</p>
             <p className="empty-state__text">完成一次分析后，你的历史记录会出现在这里。</p>
@@ -57,30 +89,69 @@ export default function HistoryPage() {
               <InkButton type="button">开始第一次分析</InkButton>
             </Link>
           </div>
+        ) : bucket === "divination" && divinationData && divinationData.items.length === 0 ? (
+          <div className="empty-state">
+            <p className="empty-state__title">暂无占卜记录</p>
+            <p className="empty-state__text">完成一次梅花或紫微求签后，会自动存入这里，方便持续回看。</p>
+            <div className="actions-row">
+              <Link to="/ziwei" className="empty-state__action">
+                <InkButton type="button">去紫微求签</InkButton>
+              </Link>
+              <Link to="/meihua" className="empty-state__action">
+                <InkButton type="button" kind="ghost">去梅花求签</InkButton>
+              </Link>
+            </div>
+          </div>
         ) : (
           <>
             <div className="history-list">
-              {data.items.map((item) => (
-                <article key={item.id} className="history-item">
-                  <div className="history-item__info">
-                    <div className="history-item__date">{item.date}</div>
-                    <div className="history-item__tags">
-                      <span className="tag tag--primary">{item.gender}</span>
-                      <span className="tag">{CALENDAR_LABEL[item.calendar] || item.calendar}</span>
-                    </div>
-                    <div className="history-item__meta">
-                      时辰 {item.timezone} · {item.provider} / {item.model} · {item.created_at}
-                    </div>
-                  </div>
-                  <div className="history-item__action">
-                    <Link to={`/result/${item.id}`}>
-                      <InkButton type="button" kind="ghost">
-                        查看结果
-                      </InkButton>
-                    </Link>
-                  </div>
-                </article>
-              ))}
+              {bucket === "analysis" && analysisData
+                ? analysisData.items.map((item) => (
+                    <article key={`analysis-${item.id}`} className="history-item">
+                      <div className="history-item__info">
+                        <div className="history-item__date">{item.date}</div>
+                        <div className="history-item__tags">
+                          <span className="tag tag--primary">{item.gender}</span>
+                          <span className="tag">{CALENDAR_LABEL[item.calendar] || item.calendar}</span>
+                        </div>
+                        <div className="history-item__meta">
+                          时辰 {item.timezone} · {item.provider} / {item.model} · {item.created_at}
+                        </div>
+                      </div>
+                      <div className="history-item__action">
+                        <Link to={`/result/${item.id}`}>
+                          <InkButton type="button" kind="ghost">
+                            查看结果
+                          </InkButton>
+                        </Link>
+                      </div>
+                    </article>
+                  ))
+                : null}
+
+              {bucket === "divination" && divinationData
+                ? divinationData.items.map((item) => (
+                    <article key={`divination-${item.id}`} className="history-item">
+                      <div className="history-item__info">
+                        <div className="history-item__date">{item.title}</div>
+                        <div className="history-item__tags">
+                          <span className="tag tag--primary">{item.type === "ziwei" ? "紫微斗数" : "梅花易数"}</span>
+                          {item.occurred_at ? <span className="tag">{item.occurred_at}</span> : null}
+                        </div>
+                        <div className="history-item__meta">
+                          {item.provider} / {item.model} · {item.created_at}
+                        </div>
+                      </div>
+                      <div className="history-item__action">
+                        <Link to={`/history/divination/${item.id}`}>
+                          <InkButton type="button" kind="ghost">
+                            查看解读
+                          </InkButton>
+                        </Link>
+                      </div>
+                    </article>
+                  ))
+                : null}
             </div>
 
             <div className="pagination">
@@ -93,12 +164,21 @@ export default function HistoryPage() {
                 上一页
               </InkButton>
               <span className="pagination__info">
-                第 {data.pagination.page} 页 · 共 {data.pagination.total} 条
+                {bucket === "analysis" && analysisData
+                  ? `第 ${analysisData.pagination.page} 页 · 共 ${analysisData.pagination.total} 条`
+                  : null}
+                {bucket === "divination" && divinationData
+                  ? `第 ${divinationData.pagination.page} 页 · 共 ${divinationData.pagination.total} 条`
+                  : null}
               </span>
               <InkButton
                 type="button"
                 kind="secondary"
-                disabled={!data.pagination.has_next}
+                disabled={
+                  bucket === "analysis"
+                    ? !(analysisData?.pagination.has_next)
+                    : !(divinationData?.pagination.has_next)
+                }
                 onClick={() => setPage((prev) => prev + 1)}
               >
                 下一页

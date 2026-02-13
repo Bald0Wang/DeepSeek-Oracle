@@ -1,3 +1,4 @@
+from .divination_repo import DivinationRepo
 from .insight_repo import InsightRepo
 from .oracle_chat_repo import OracleChatRepo
 from .result_repo import ResultRepo
@@ -14,4 +15,5 @@ __all__ = [
     "VerificationCodeRepo",
     "InsightRepo",
     "OracleChatRepo",
+    "DivinationRepo",
 ]

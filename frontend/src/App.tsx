@@ -8,6 +8,7 @@ import { clearAuthData, getAccessToken, getStoredUser, setAuthData } from "./uti
 import AdminDashboardPage from "./pages/AdminDashboard";
 import AdminLoginPage from "./pages/AdminLogin";
 import DetailPage from "./pages/Detail";
+import DivinationRecordPage from "./pages/DivinationRecord";
 import ForgotPasswordPage from "./pages/ForgotPassword";
 import HistoryPage from "./pages/History";
 import InsightsPage from "./pages/Insights";
@@ -158,6 +159,7 @@ export default function App() {
             <Route path="/result/:id" element={<ResultPage />} />
             <Route path="/result/:id/:type" element={<DetailPage />} />
             <Route path="/history" element={<HistoryPage />} />
+            <Route path="/history/divination/:id" element={<DivinationRecordPage />} />
             <Route path="/insights" element={<InsightsPage />} />
           </Route>
 

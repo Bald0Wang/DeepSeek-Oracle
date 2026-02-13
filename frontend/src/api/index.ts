@@ -12,6 +12,8 @@ import type {
   AuthRequest,
   ApiResponse,
   BirthInfo,
+  DivinationHistoryData,
+  DivinationHistoryDetail,
   HistoryResponseData,
   InsightOverviewData,
   MeihuaDivinationRequest,
@@ -88,6 +90,9 @@ export const getInsightOverview = async (resultId?: number) => {
   return unwrap(await api.get<ApiResponse<InsightOverviewData>>(`/insights/overview${query}`));
 };
 
+export const generateInsightOverviewByBirthInfo = async (birthInfo: BirthInfo) =>
+  unwrap(await api.post<ApiResponse<InsightOverviewData>>("/insights/overview", { birth_info: birthInfo }));
+
 export const getResultItem = async (
   id: number,
   analysisType: "marriage_path" | "challenges" | "partner_character"
@@ -95,6 +100,20 @@ export const getResultItem = async (
 
 export const getHistory = async (page = 1, pageSize = 20) =>
   unwrap(await api.get<ApiResponse<HistoryResponseData>>(`/history?page=${page}&page_size=${pageSize}`));
+
+export const getDivinationHistory = async (
+  page = 1,
+  pageSize = 20,
+  type: "all" | "ziwei" | "meihua" = "all"
+) =>
+  unwrap(
+    await api.get<ApiResponse<DivinationHistoryData>>(
+      `/history/divinations?page=${page}&page_size=${pageSize}&type=${type}`
+    )
+  );
+
+export const getDivinationHistoryDetail = async (recordId: number) =>
+  unwrap(await api.get<ApiResponse<DivinationHistoryDetail>>(`/history/divinations/${recordId}`));
 
 export const exportReport = async (id: number, scope = "full") =>
   api.get(`/export/${id}?scope=${scope}`, { responseType: "blob" });

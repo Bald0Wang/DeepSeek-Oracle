@@ -168,6 +168,25 @@ CREATE TABLE IF NOT EXISTS oracle_turns (
 CREATE INDEX IF NOT EXISTS idx_oracle_turns_conversation_created
 ON oracle_turns(conversation_id, created_at ASC);
 
+CREATE TABLE IF NOT EXISTS divination_records (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  divination_type TEXT NOT NULL,
+  question_text TEXT NOT NULL,
+  birth_info_json TEXT,
+  occurred_at TEXT,
+  result_json TEXT NOT NULL,
+  provider TEXT NOT NULL,
+  model TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_divination_records_user_created
+ON divination_records(user_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_divination_records_user_type_created
+ON divination_records(user_id, divination_type, created_at DESC);
+
 CREATE TABLE IF NOT EXISTS scheduler_runs (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   job_name TEXT NOT NULL,
@@ -192,6 +211,7 @@ def init_db(database_path: str) -> None:
         _migrate_user_scope_columns(conn)
         _migrate_insight_tables(conn)
         _migrate_oracle_chat_tables(conn)
+        _migrate_divination_records_table(conn)
         conn.commit()
 
 
@@ -334,6 +354,37 @@ def _migrate_oracle_chat_tables(conn: sqlite3.Connection) -> None:
         """
         CREATE INDEX IF NOT EXISTS idx_oracle_turns_conversation_created
         ON oracle_turns(conversation_id, created_at ASC)
+        """
+    )
+
+
+def _migrate_divination_records_table(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS divination_records (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER NOT NULL,
+          divination_type TEXT NOT NULL,
+          question_text TEXT NOT NULL,
+          birth_info_json TEXT,
+          occurred_at TEXT,
+          result_json TEXT NOT NULL,
+          provider TEXT NOT NULL,
+          model TEXT NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_divination_records_user_created
+        ON divination_records(user_id, created_at DESC)
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_divination_records_user_type_created
+        ON divination_records(user_id, divination_type, created_at DESC)
         """
     )
 

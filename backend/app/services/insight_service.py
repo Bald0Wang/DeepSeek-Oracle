@@ -254,10 +254,15 @@ class InsightService:
         user_id: int,
         is_admin: bool = False,
         result_id: int | None = None,
+        birth_info_override: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         birth_info: dict[str, Any] | None = None
         source_result_id: int | None = result_id
-        if result_id is not None:
+
+        if birth_info_override:
+            birth_info = birth_info_override
+            source_result_id = None
+        elif result_id is not None:
             result_birth = self.repo.get_result_birth_info(
                 result_id=result_id,
                 user_id=user_id,
@@ -277,11 +282,24 @@ class InsightService:
                     source_result_id = int(item["result_id"])
                     break
 
+        kline_profile = self.repo.get_life_kline_profile(user_id=user_id)
+        if not birth_info and kline_profile and isinstance(kline_profile.get("birth_info"), dict):
+            cached_birth_info = kline_profile.get("birth_info") or {}
+            if cached_birth_info.get("date"):
+                birth_info = cached_birth_info
+
         if not birth_info:
             raise business_error("A4004", "birth profile not found", 404, False)
 
-        kline_profile = self.repo.get_life_kline_profile(user_id=user_id)
-        if not kline_profile:
+        should_regenerate = not kline_profile
+        if not should_regenerate and isinstance(kline_profile, dict):
+            existing_birth = kline_profile.get("birth_info") or {}
+            should_regenerate = any(
+                str(existing_birth.get(key, "")) != str(birth_info.get(key, ""))
+                for key in ("date", "timezone", "gender", "calendar")
+            )
+
+        if should_regenerate:
             astrolabe_data = self.ziwei_service.get_astrolabe_data(
                 date=birth_info["date"],
                 timezone=int(birth_info["timezone"]),
