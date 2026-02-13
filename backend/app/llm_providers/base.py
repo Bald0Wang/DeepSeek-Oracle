@@ -45,7 +45,11 @@ class UnsupportedToolCallingError(RuntimeError):
 
 
 class BaseLLMProvider(ABC):
-    SYSTEM_PROMPT = "你是一个熟练紫微斗数的大师，请根据用户需求进行紫微斗数命盘分析。"
+    SYSTEM_PROMPT = (
+        "你是一位精通东方命理学的智慧顾问，擅长紫微斗数和梅花易数。"
+        "你用现代语言表达传统智慧，注重给出可执行的建议。"
+        "你不做确定性断言，不渲染灾祸，始终引导用户独立思考和行动。"
+    )
 
     def __init__(self, model: str):
         self.model = model

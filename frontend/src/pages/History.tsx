@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { getDivinationHistory, getHistory } from "../api";
+import { getDivinationHistory, getHistory, getOracleConversations } from "../api";
 import { InkButton } from "../components/InkButton";
 import { InkCard } from "../components/InkCard";
 import { LoadingAnimation } from "../components/LoadingAnimation";
-import type { DivinationHistoryData, HistoryResponseData } from "../types";
+import type { DivinationHistoryData, HistoryResponseData, OracleConversationSummary } from "../types";
 
 
 const CALENDAR_LABEL: Record<string, string> = {
@@ -18,6 +18,7 @@ export default function HistoryPage() {
   const [bucket, setBucket] = useState<"analysis" | "divination">("analysis");
   const [page, setPage] = useState(1);
   const [analysisData, setAnalysisData] = useState<HistoryResponseData | null>(null);
+  const [conversationData, setConversationData] = useState<OracleConversationSummary[] | null>(null);
   const [divinationData, setDivinationData] = useState<DivinationHistoryData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,11 +26,15 @@ export default function HistoryPage() {
     (async () => {
       try {
         if (bucket === "analysis") {
-          const response = await getHistory(page, 20);
-          if (!response.data) {
+          const [historyResponse, conversationResponse] = await Promise.all([
+            getHistory(page, 20),
+            getOracleConversations(60),
+          ]);
+          if (!historyResponse.data) {
             throw new Error("history is empty");
           }
-          setAnalysisData(response.data);
+          setAnalysisData(historyResponse.data);
+          setConversationData(conversationResponse.data?.items || []);
           return;
         }
         const response = await getDivinationHistory(page, 20, "all");
@@ -76,15 +81,15 @@ export default function HistoryPage() {
           </button>
         </div>
 
-        {(bucket === "analysis" && !analysisData) || (bucket === "divination" && !divinationData) ? (
+        {(bucket === "analysis" && (!analysisData || !conversationData)) || (bucket === "divination" && !divinationData) ? (
           <div className="loading-container">
             <LoadingAnimation size="large" />
             <p className="loading-state-text">加载中...</p>
           </div>
-        ) : bucket === "analysis" && analysisData && analysisData.items.length === 0 ? (
+        ) : bucket === "analysis" && analysisData && conversationData && analysisData.items.length === 0 && conversationData.length === 0 ? (
           <div className="empty-state">
             <p className="empty-state__title">暂无历史记录</p>
-            <p className="empty-state__text">完成一次分析后，你的历史记录会出现在这里。</p>
+            <p className="empty-state__text">完成一次分析或咨询后，你的历史记录会出现在这里。</p>
             <Link to="/" className="empty-state__action">
               <InkButton type="button">开始第一次分析</InkButton>
             </Link>
@@ -128,6 +133,29 @@ export default function HistoryPage() {
                     </article>
                   ))
                 : null}
+              {bucket === "analysis" && conversationData
+                ? conversationData.map((conversation) => (
+                    <article key={`conversation-${conversation.id}`} className="history-item">
+                      <div className="history-item__info">
+                        <div className="history-item__date">{conversation.title || "咨询对话"}</div>
+                        <div className="history-item__tags">
+                          <span className="tag tag--primary">咨询对话</span>
+                          <span className="tag">{conversation.turn_count || 0} 轮</span>
+                        </div>
+                        <div className="history-item__meta">
+                          最新更新 {conversation.updated_at} · 最近问题 {conversation.last_query || "暂无"}
+                        </div>
+                      </div>
+                      <div className="history-item__action">
+                        <Link to={`/oracle-chat?conversation_id=${conversation.id}`}>
+                          <InkButton type="button" kind="ghost">
+                            继续咨询
+                          </InkButton>
+                        </Link>
+                      </div>
+                    </article>
+                  ))
+                : null}
 
               {bucket === "divination" && divinationData
                 ? divinationData.items.map((item) => (
@@ -165,7 +193,10 @@ export default function HistoryPage() {
               </InkButton>
               <span className="pagination__info">
                 {bucket === "analysis" && analysisData
-                  ? `第 ${analysisData.pagination.page} 页 · 共 ${analysisData.pagination.total} 条`
+                  ? `第 ${analysisData.pagination.page} 页 · 分析 ${analysisData.pagination.total} 条`
+                  : null}
+                {bucket === "analysis" && conversationData
+                  ? ` · 咨询 ${conversationData.length} 条`
                   : null}
                 {bucket === "divination" && divinationData
                   ? `第 ${divinationData.pagination.page} 页 · 共 ${divinationData.pagination.total} 条`

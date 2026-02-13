@@ -46,7 +46,7 @@ export default function MeihuaFortunePage() {
   };
 
   return (
-    <div className="stack fade-in">
+    <div className="meihua-page stack fade-in">
       <InkCard title="梅花易数求签" icon="梅">
         <form className="stack" onSubmit={onSubmit}>
           <div className="field">

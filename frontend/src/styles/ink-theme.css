@@ -3466,6 +3466,27 @@ body::after {
   border-color: rgba(157, 43, 29, 0.36);
 }
 
+.meihua-page .meta-item {
+  background: linear-gradient(170deg, rgba(255, 252, 247, 0.96), rgba(253, 245, 237, 0.92));
+  border-color: rgba(157, 43, 29, 0.2);
+  box-shadow:
+    inset 0 0.0625rem 0 rgba(255, 255, 255, 0.9),
+    0 0.16rem 0.45rem rgba(126, 73, 52, 0.08);
+}
+
+.meihua-page .meta-item__label {
+  color: #7a6358;
+}
+
+.meihua-page .meta-item__value {
+  color: #4b352d;
+  font-weight: 650;
+}
+
+.meihua-page .meta-grid {
+  gap: 0.72rem;
+}
+
 .insights-page .meta-item {
   background: rgba(255, 250, 244, 0.94);
   border-color: rgba(157, 43, 29, 0.2);

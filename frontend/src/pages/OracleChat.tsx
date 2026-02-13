@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import {
   createOracleConversation,
@@ -141,7 +141,16 @@ const mapServerTurn = (turn: OracleConversationTurnRecord): OracleConversationTu
 
 export default function OracleChatPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const isAuthenticated = Boolean(getAccessToken()) && Boolean(getStoredUser());
+  const requestedConversationId = useMemo(() => {
+    const raw = searchParams.get("conversation_id");
+    if (!raw) {
+      return null;
+    }
+    const value = Number.parseInt(raw, 10);
+    return Number.isFinite(value) && value > 0 ? value : null;
+  }, [searchParams]);
 
   const [chatSession, setChatSession] = useState(getOracleChatSessionState());
   const [conversations, setConversations] = useState<OracleConversationSummary[]>([]);
@@ -267,8 +276,8 @@ export default function OracleChatPage() {
     if (!isAuthenticated) {
       return;
     }
-    void reloadConversations();
-  }, [isAuthenticated]);
+    void reloadConversations(requestedConversationId || undefined);
+  }, [isAuthenticated, requestedConversationId]);
 
   useEffect(() => {
     if (!isAuthenticated || !chatSession.conversationId) {
