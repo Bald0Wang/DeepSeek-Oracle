@@ -13,7 +13,14 @@ import {
   subscribeZiweiFortuneSession,
   updateZiweiFortuneForm,
 } from "../stores/ziweiFortuneSession";
-import { formatBirthPreview, toBirthInfo, validateBirthForm } from "../utils/birthForm";
+import {
+  formatBirthPreview,
+  formatTrueSolarCorrectionPreview,
+  getTrueSolarCityOptions,
+  getTrueSolarProvinceOptions,
+  toBirthInfo,
+  validateBirthForm,
+} from "../utils/birthForm";
 import type { BirthInfo } from "../types";
 
 export default function ZiweiFortunePage() {
@@ -29,6 +36,9 @@ export default function ZiweiFortunePage() {
   const inputPreview = useMemo(() => {
     return formatBirthPreview(session.form);
   }, [session.form]);
+  const provinceOptions = useMemo(() => getTrueSolarProvinceOptions(), []);
+  const cityOptions = useMemo(() => getTrueSolarCityOptions(session.form.provinceCode), [session.form.provinceCode]);
+  const trueSolarPreview = useMemo(() => formatTrueSolarCorrectionPreview(session.form), [session.form]);
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -139,9 +149,52 @@ export default function ZiweiFortunePage() {
                 max={59}
               />
             </div>
+            <div className="field">
+              <label className="field__label" htmlFor="ziwei-province">省级区域</label>
+              <select
+                id="ziwei-province"
+                value={session.form.provinceCode}
+                onChange={(event) => {
+                  const nextProvinceCode = event.target.value;
+                  const nextCities = getTrueSolarCityOptions(nextProvinceCode);
+                  updateZiweiFortuneForm({
+                    provinceCode: nextProvinceCode,
+                    cityCode: nextCities[0]?.code || "",
+                  });
+                }}
+              >
+                {provinceOptions.map((item) => (
+                  <option key={item.code} value={item.code}>{item.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label className="field__label" htmlFor="ziwei-city">城市（真太阳时）</label>
+              <select
+                id="ziwei-city"
+                value={session.form.cityCode}
+                onChange={(event) => updateZiweiFortuneForm({ cityCode: event.target.value })}
+              >
+                {cityOptions.map((item) => (
+                  <option key={item.code} value={item.code}>{item.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label className="field__label" htmlFor="ziwei-true-solar">真太阳时校正</label>
+              <select
+                id="ziwei-true-solar"
+                value={session.form.enableTrueSolar ? "on" : "off"}
+                onChange={(event) => updateZiweiFortuneForm({ enableTrueSolar: event.target.value === "on" })}
+              >
+                <option value="off">不启用</option>
+                <option value="on">启用（经度+均时差）</option>
+              </select>
+            </div>
           </div>
 
           <p className="oracle-chat__tip">当前输入：{inputPreview}</p>
+          <p className="oracle-chat__tip">{trueSolarPreview}</p>
           {session.error ? <p className="error-text">{session.error}</p> : null}
           {session.loading ? <p className="oracle-chat__tip">任务进行中，切换页面后回来仍会保留状态。</p> : null}
 

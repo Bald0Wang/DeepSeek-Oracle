@@ -10,6 +10,9 @@ export interface ZiweiFortuneFormState {
   hour: string;
   minute: string;
   gender: BirthInfo["gender"];
+  provinceCode: string;
+  cityCode: string;
+  enableTrueSolar: boolean;
 }
 
 export interface ZiweiFortuneSessionState {
@@ -37,6 +40,9 @@ const defaultState: ZiweiFortuneSessionState = {
     hour: "0",
     minute: "1",
     gender: "男",
+    provinceCode: "beijing",
+    cityCode: "beijing",
+    enableTrueSolar: false,
   },
   loading: false,
   error: null,
@@ -73,6 +79,9 @@ const normalizeForm = (value: Partial<ZiweiFortuneFormState> | null | undefined)
   hour: typeof value?.hour === "string" ? value.hour : defaultState.form.hour,
   minute: typeof value?.minute === "string" ? value.minute : defaultState.form.minute,
   gender: value?.gender === "女" ? "女" : "男",
+  provinceCode: typeof value?.provinceCode === "string" ? value.provinceCode : defaultState.form.provinceCode,
+  cityCode: typeof value?.cityCode === "string" ? value.cityCode : defaultState.form.cityCode,
+  enableTrueSolar: Boolean(value?.enableTrueSolar),
 });
 
 const parsePersistedForm = (): ZiweiFortuneFormState | null => {

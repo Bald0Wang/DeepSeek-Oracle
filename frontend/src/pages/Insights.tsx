@@ -161,6 +161,9 @@ export default function InsightsPage() {
     hour: "0",
     minute: "0",
     gender: "男",
+    provinceCode: "beijing",
+    cityCode: "beijing",
+    enableTrueSolar: false,
   });
 
   const loadData = async (resultId?: number) => {
