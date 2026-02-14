@@ -1,0 +1,24 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+echo "🔍 运行代码提交校验..."
+
+# 前端检查
+echo "📋 前端代码检查..."
+cd frontend
+npm run typecheck
+if [ $? -ne 0 ]; then
+    echo "❌ 前端 TypeScript 检查失败"
+    exit 1
+fi
+
+# 后端检查
+echo "🐍 后端代码检查..."
+cd ../scripts
+./check_backend.sh
+if [ $? -ne 0 ]; then
+    echo "❌ 后端代码检查失败"
+    exit 1
+fi
+
+echo "✅ 所有检查通过，准备提交..."
