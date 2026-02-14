@@ -5,7 +5,11 @@ echo "🔍 检查后端代码质量..."
 
 # 检查 Python 文件语法
 echo "📄 检查 Python 语法..."
-find backend -name "*.py" -exec python3 -m py_compile {} \;
+if [ -d "../backend" ]; then
+    find ../backend -name "*.py" -exec python3 -m py_compile {} \;
+else
+    find backend -name "*.py" -exec python3 -m py_compile {} \;
+fi
 
 if [ $? -ne 0 ]; then
     echo "❌ Python 语法检查失败"
@@ -15,7 +19,11 @@ fi
 # 如果安装了 flake8，则运行代码风格检查
 if command -v flake8 &> /dev/null; then
     echo "🎨 运行 flake8 代码风格检查..."
-    flake8 backend --max-line-length=88 --exclude=venv,__pycache__,.git
+    if [ -d "../backend" ]; then
+        flake8 ../backend --max-line-length=88 --exclude=venv,__pycache__,.git
+    else
+        flake8 backend --max-line-length=88 --exclude=venv,__pycache__,.git
+    fi
     if [ $? -ne 0 ]; then
         echo "❌ flake8 检查失败"
         exit 1
