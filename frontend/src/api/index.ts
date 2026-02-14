@@ -121,6 +121,31 @@ export const exportReport = async (id: number, scope = "full") =>
 export const oracleChat = async (payload: OracleChatRequest) =>
   unwrap(await api.post<ApiResponse<OracleChatResponse>>("/oracle/chat", payload));
 
+export const oracleChatGuest = async (payload: OracleChatRequest) => {
+  const response = await fetch("/api/oracle/chat", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  let parsed: ApiResponse<OracleChatResponse> | null = null;
+  try {
+    parsed = (await response.json()) as ApiResponse<OracleChatResponse>;
+  } catch {
+    parsed = null;
+  }
+
+  if (!response.ok) {
+    throw new Error(parsed?.message || `request failed (${response.status})`);
+  }
+  if (!parsed || !isSuccessCode(parsed.code)) {
+    throw new Error(parsed?.message || "request failed");
+  }
+  return parsed;
+};
+
 export const createOracleConversation = async (title?: string) =>
   unwrap(await api.post<ApiResponse<{ id: number; title?: string; created_at: string; updated_at: string }>>("/oracle/conversations", { title }));
 

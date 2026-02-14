@@ -139,7 +139,16 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route element={<Layout user={activeUser} authReady={authReady} onLogout={handleLogout} />}>
+        <Route
+          element={
+            <Layout
+              user={activeUser}
+              authReady={authReady}
+              onLogout={handleLogout}
+              onAuthSuccess={handleAuthSuccess}
+            />
+          }
+        >
           <Route path="/" element={<Navigate to="/oracle" replace />} />
           <Route path="/oracle" element={<OracleChatPage />} />
           <Route path="/start-analysis" element={<Navigate to="/oracle" replace />} />

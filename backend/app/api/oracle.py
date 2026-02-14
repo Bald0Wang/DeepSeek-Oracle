@@ -10,7 +10,7 @@ from app.models import OracleChatRepo
 from app.schemas import validate_oracle_chat_payload
 from app.services import get_oracle_orchestrator_service
 from app.utils.errors import business_error
-from app.utils.auth import require_auth
+from app.utils.auth import require_auth, resolve_request_user
 from app.utils.response import success_response
 
 
@@ -70,11 +70,16 @@ def _persist_turn(
 
 
 @oracle_bp.post("/oracle/chat")
-@require_auth()
 def oracle_chat():
+    resolve_request_user(optional=True)
     user_id = _get_current_user_id()
     payload = request.get_json(silent=True) or {}
     normalized = validate_oracle_chat_payload(payload)
+    if user_id <= 0:
+        normalized.pop("conversation_id", None)
+        data = get_oracle_orchestrator_service().chat(normalized)
+        return success_response(data=data)
+
     repo = _get_oracle_chat_repo()
     conversation_id = _resolve_conversation_id(repo=repo, user_id=user_id, normalized=normalized)
     normalized["conversation_id"] = conversation_id

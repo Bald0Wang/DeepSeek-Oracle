@@ -21,16 +21,24 @@ def _extract_bearer_token() -> str:
     return token.strip()
 
 
+def resolve_request_user(optional: bool = False):
+    token = _extract_bearer_token()
+    if not token:
+        g.current_user = None
+        if optional:
+            return None
+        raise business_error("A4011", "missing access token", 401, False)
+
+    user = get_auth_service().authenticate_token(token)
+    g.current_user = user
+    return user
+
+
 def require_auth(admin_only: bool = False):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            token = _extract_bearer_token()
-            if not token:
-                raise business_error("A4011", "missing access token", 401, False)
-
-            user = get_auth_service().authenticate_token(token)
-            g.current_user = user
+            user = resolve_request_user(optional=False)
 
             if admin_only and user.get("role") != "admin":
                 raise business_error("A4013", "admin permission required", 403, False)

@@ -1,11 +1,12 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 
 import {
   createOracleConversation,
   getOracleConversations,
   getOracleConversationTurns,
 } from "../api";
+import { OPEN_AUTH_MODAL_EVENT } from "../constants/events";
 import { InkButton } from "../components/InkButton";
 import { InkCard } from "../components/InkCard";
 import { MarkdownRenderer } from "../components/MarkdownRenderer";
@@ -41,7 +42,6 @@ const QUICK_PROMPTS = [
 
 const ORACLE_QUERY_DRAFT_KEY = "oracle:chat:query_draft";
 const ORACLE_AGENT_PREF_KEY = "oracle:chat:enabled_agents";
-const ORACLE_GUEST_DRAFT_KEY = "oracle:guest_chat_draft";
 const AUTO_HISTORY_MAX_TURNS = 4;
 const AGENT_OPTIONS: Array<{ id: EnabledSchool; label: string; desc: string }> = [
   { id: "ziwei", label: "紫微斗数", desc: "长期趋势" },
@@ -138,9 +138,7 @@ const mapServerTurn = (turn: OracleConversationTurnRecord): OracleConversationTu
   error: turn.error_message || null,
 });
 
-
 export default function OracleChatPage() {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isAuthenticated = Boolean(getAccessToken()) && Boolean(getStoredUser());
   const requestedConversationId = useMemo(() => {
@@ -160,7 +158,7 @@ export default function OracleChatPage() {
   );
   const [selectedTurnId, setSelectedTurnId] = useState<string | null>(null);
   const [userQuery, setUserQuery] = useState(() => window.sessionStorage.getItem(ORACLE_QUERY_DRAFT_KEY) || "");
-  const [guestQuery, setGuestQuery] = useState(() => window.sessionStorage.getItem(ORACLE_GUEST_DRAFT_KEY) || "");
+  const [guestQuery, setGuestQuery] = useState("");
   const [enabledAgents, setEnabledAgents] = useState<EnabledSchool[]>(() => loadEnabledAgents());
   const [localError, setLocalError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -201,18 +199,6 @@ export default function OracleChatPage() {
     }
     window.sessionStorage.setItem(ORACLE_AGENT_PREF_KEY, JSON.stringify(enabledAgents));
   }, [enabledAgents, isAuthenticated]);
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      return;
-    }
-    const draft = window.sessionStorage.getItem(ORACLE_GUEST_DRAFT_KEY);
-    if (!draft) {
-      return;
-    }
-    setUserQuery((prev) => (prev.trim() ? prev : draft));
-    window.sessionStorage.removeItem(ORACLE_GUEST_DRAFT_KEY);
-  }, [isAuthenticated]);
 
   useEffect(() => {
     if (chatSession.activeTurnId) {
@@ -294,14 +280,13 @@ export default function OracleChatPage() {
     event.preventDefault();
     setLocalError(null);
 
-    const query = guestQuery.trim();
-    if (!query) {
-      setLocalError("请先输入问题，再进入登录。");
-      return;
+    const draft = guestQuery.trim();
+    if (draft) {
+      setUserQuery(draft);
+      window.sessionStorage.setItem(ORACLE_QUERY_DRAFT_KEY, draft);
     }
 
-    window.sessionStorage.setItem(ORACLE_GUEST_DRAFT_KEY, query);
-    navigate("/login");
+    window.dispatchEvent(new Event(OPEN_AUTH_MODAL_EVENT));
   };
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -388,14 +373,13 @@ export default function OracleChatPage() {
         <InkCard title="多智能体咨询台" icon="询">
           <section className="oracle-guest">
             <div className="oracle-guest__intro">
-              <p className="oracle-guest__title">先输入你的问题，登录后继续完整分析</p>
               <p className="oracle-guest__desc">
-                系统会根据问题自动调用紫微斗数、梅花易数与心学辅助，输出可执行建议与风险提醒。
+                系统会根据问题自动调用紫微斗数、梅花易数与心学辅助，输出可执行建议与风险提醒。请先登录后开始咨询并保存会话。
               </p>
             </div>
 
-            <form className="oracle-chat__composer stack" onSubmit={onGuestSubmit}>
-              <div className="field">
+            <form className="oracle-chat__composer oracle-chat__composer--guest stack" onSubmit={onGuestSubmit}>
+              <div className="field oracle-chat__field--guest">
                 <label className="field__label" htmlFor="oracle-guest-query">你想咨询什么？</label>
                 <textarea
                   id="oracle-guest-query"
@@ -405,25 +389,28 @@ export default function OracleChatPage() {
                   onChange={(event) => setGuestQuery(event.target.value)}
                   rows={5}
                 />
-                <div className="oracle-chat__prompt-row" aria-label="备选问题">
-                  {QUICK_PROMPTS.map((prompt, index) => (
-                    <button
-                      key={`${prompt}-${index}`}
-                      type="button"
-                      className="oracle-turn__follow-chip"
-                      onClick={() => setGuestQuery(prompt)}
-                    >
-                      {prompt}
-                    </button>
-                  ))}
-                </div>
               </div>
 
               {localError ? <p className="error-text">{localError}</p> : null}
-              <div className="actions-row">
-                <InkButton type="submit">发送并登录继续</InkButton>
+              <div className="actions-row actions-row--guest">
+                <InkButton type="submit" className="oracle-guest__submit">
+                  发送
+                </InkButton>
               </div>
             </form>
+
+            <div className="oracle-guest__prompt-row" aria-label="备选问题">
+              {QUICK_PROMPTS.map((prompt, index) => (
+                <button
+                  key={`${prompt}-${index}`}
+                  type="button"
+                  className="oracle-turn__follow-chip"
+                  onClick={() => setGuestQuery(prompt)}
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
           </section>
         </InkCard>
       </div>

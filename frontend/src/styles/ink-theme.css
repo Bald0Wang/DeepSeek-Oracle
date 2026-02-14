@@ -2031,7 +2031,7 @@ select:focus {
 }
 
 .error-text {
-  color: #ffe3d6;
+  color: #d9534f;
   background: var(--danger-soft);
   border: 1px solid rgba(214, 111, 90, 0.44);
   border-radius: var(--radius-sm);
@@ -3895,5 +3895,879 @@ body::after {
     grid-auto-flow: row !important;
     grid-auto-columns: auto !important;
     overflow: visible !important;
+  }
+}
+
+/* =========================================================
+   Oracle chat cleanup pass: reduce decoration and improve hierarchy
+   ========================================================= */
+:root {
+  --clean-bg: #faf7f5;
+  --clean-card: #ffffff;
+  --clean-border: rgba(15, 23, 42, 0.08);
+  --clean-text: #0f172a;
+  --clean-muted: rgba(15, 23, 42, 0.62);
+  --clean-primary: #b23a2f;
+  --clean-primary-weak: rgba(178, 58, 47, 0.12);
+  --clean-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+body {
+  color: var(--clean-text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: linear-gradient(180deg, #fbf8f6 0%, #f7f2ef 100%);
+}
+
+body::before,
+body::after,
+.app-shell::before {
+  display: none;
+}
+
+.oracle-chat {
+  color: var(--clean-text);
+}
+
+.oracle-chat .ink-card {
+  background: var(--clean-card);
+  border: 1px solid var(--clean-border);
+  border-radius: 16px;
+  box-shadow: var(--clean-shadow);
+  padding: 24px;
+}
+
+.oracle-chat .ink-card--ornate::before,
+.oracle-chat .ink-card::after {
+  display: none;
+}
+
+.oracle-chat .ink-card__header {
+  margin-bottom: 14px;
+}
+
+.oracle-chat .ink-card__title {
+  font-family: inherit;
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: 0.012em;
+  color: var(--clean-text);
+}
+
+.oracle-chat .ink-card__title-icon {
+  background: rgba(178, 58, 47, 0.12);
+  color: #8e2f26;
+  border: 1px solid rgba(178, 58, 47, 0.14);
+}
+
+.oracle-chat__workspace {
+  gap: 16px;
+}
+
+.oracle-chat__sidebar,
+.oracle-chat__main,
+.oracle-chat__inspector {
+  border: 1px solid var(--clean-border);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+}
+
+.oracle-chat__sidebar::before,
+.oracle-chat__main::before,
+.oracle-chat__inspector::before,
+.oracle-chat__sidebar::after,
+.oracle-chat__main::after,
+.oracle-chat__inspector::after {
+  display: none;
+}
+
+.oracle-chat__sidebar,
+.oracle-chat__inspector {
+  padding: 20px;
+}
+
+.oracle-chat__main {
+  overflow: hidden;
+}
+
+.oracle-chat__thread {
+  border: 0;
+  border-radius: 0;
+  background: #ffffff;
+  padding: 20px;
+}
+
+.oracle-chat__composer {
+  border-top: 1px solid var(--clean-border);
+  background: #ffffff;
+  padding: 20px;
+}
+
+.oracle-panel__header h3 {
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 620;
+  color: var(--clean-text);
+}
+
+.oracle-panel__header span,
+.oracle-history__meta,
+.oracle-inspector__meta,
+.oracle-chat__tip,
+.oracle-chat__empty-desc,
+.oracle-guest__desc,
+.oracle-turn__meta,
+.oracle-turn__context,
+.oracle-chat__action-meta {
+  color: var(--clean-muted);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.oracle-chat__empty-title,
+.oracle-guest__title {
+  color: var(--clean-text);
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+}
+
+.oracle-history__item,
+.oracle-history__empty,
+.oracle-turn__plan-item,
+.oracle-turn__context,
+.oracle-chat__action-item {
+  border: 1px solid var(--clean-border);
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: none;
+}
+
+.oracle-history__item {
+  padding: 12px;
+}
+
+.oracle-history__item:hover {
+  background: #fffaf8;
+  border-color: rgba(178, 58, 47, 0.24);
+}
+
+.oracle-history__item--active {
+  background: rgba(178, 58, 47, 0.08);
+  border-color: rgba(178, 58, 47, 0.34);
+}
+
+.oracle-turn__bubble {
+  border: 1px solid var(--clean-border);
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.oracle-turn__bubble--user {
+  background: rgba(178, 58, 47, 0.07);
+}
+
+.oracle-turn__bubble--assistant {
+  background: #ffffff;
+}
+
+.oracle-chat .field__label,
+.oracle-chat__agent-toggle-title {
+  color: var(--clean-text);
+  font-size: 14px;
+  font-weight: 620;
+}
+
+.oracle-chat__textarea {
+  width: 100%;
+  min-height: 180px;
+  border-radius: 12px;
+  border: 1px solid var(--clean-border);
+  background: #fbfbfc;
+  color: var(--clean-text);
+  padding: 14px 16px;
+  box-shadow: none;
+}
+
+.oracle-chat__textarea:hover {
+  border-color: rgba(178, 58, 47, 0.24);
+  background: #ffffff;
+}
+
+.oracle-chat__textarea:focus {
+  border-color: rgba(178, 58, 47, 0.45);
+  box-shadow: 0 0 0 4px var(--clean-primary-weak);
+  background: #ffffff;
+}
+
+.oracle-chat__textarea::placeholder {
+  color: rgba(15, 23, 42, 0.42);
+}
+
+.oracle-chat .actions-row .ink-button,
+.oracle-chat .ink-button--primary {
+  min-height: 46px;
+  height: 46px;
+  padding: 0 18px;
+  border-radius: 12px;
+}
+
+.oracle-chat .ink-button--primary {
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: var(--clean-primary);
+  color: #ffffff;
+  box-shadow: 0 10px 18px rgba(178, 58, 47, 0.18);
+}
+
+.oracle-chat .ink-button--primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: #be463b;
+}
+
+.oracle-chat .ink-button--primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.oracle-chat__prompt-row,
+.oracle-turn__follow-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.oracle-chat__prompt-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.oracle-turn__follow-chip,
+.oracle-chat__prompt-chip {
+  min-height: 0;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(178, 58, 47, 0.1);
+  background: rgba(178, 58, 47, 0.08);
+  color: rgba(15, 23, 42, 0.85);
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.oracle-turn__follow-chip:hover,
+.oracle-chat__prompt-chip:hover {
+  background: rgba(178, 58, 47, 0.12);
+  border-color: rgba(178, 58, 47, 0.14);
+}
+
+.oracle-turn__follow-chip:focus-visible,
+.oracle-chat__prompt-chip:focus-visible {
+  box-shadow: 0 0 0 4px var(--clean-primary-weak);
+}
+
+.oracle-agent-toggle {
+  border: 1px solid var(--clean-border);
+  border-radius: 12px;
+  background: #f8fafc;
+  color: var(--clean-text);
+  padding: 10px 12px;
+  min-height: 0;
+}
+
+.oracle-agent-toggle:hover {
+  border-color: rgba(178, 58, 47, 0.3);
+  background: #fff8f4;
+}
+
+.oracle-agent-toggle--active {
+  background: rgba(178, 58, 47, 0.1);
+  border-color: rgba(178, 58, 47, 0.38);
+}
+
+.oracle-agent-toggle__title {
+  color: var(--clean-text);
+  font-size: 13px;
+}
+
+.oracle-agent-toggle__desc {
+  color: var(--clean-muted);
+  font-size: 12px;
+}
+
+.oracle-guest__intro {
+  background: #fffaf8;
+  border: 1px solid var(--clean-border);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+@media (max-width: 76rem) {
+  .oracle-chat .ink-card {
+    padding: 18px;
+    border-radius: 14px;
+  }
+
+  .oracle-chat__sidebar,
+  .oracle-chat__main,
+  .oracle-chat__inspector {
+    border-radius: 14px;
+  }
+
+  .oracle-chat__thread,
+  .oracle-chat__composer {
+    padding: 16px;
+  }
+}
+
+/* =========================================================
+   Reference polish pass: soft neutral look for guest prompt page
+   ========================================================= */
+body {
+  background: linear-gradient(180deg, #f0ecf2 0%, #efe9e2 100%);
+}
+
+.top-nav {
+  background: rgba(255, 255, 255, 0.68);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  box-shadow: none;
+  backdrop-filter: blur(10px);
+}
+
+.top-nav__brand {
+  color: #111827;
+}
+
+.top-nav__links a {
+  color: rgba(15, 23, 42, 0.72);
+  border: 1px solid transparent;
+  border-radius: 999px;
+}
+
+.top-nav__links a:hover {
+  border-color: rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.top-nav__links a.active {
+  color: #0f172a;
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.1);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+}
+
+.top-nav__user {
+  border-color: rgba(15, 23, 42, 0.1);
+  background: rgba(255, 255, 255, 0.9);
+  color: #334155;
+}
+
+.oracle-chat--guest {
+  padding-top: clamp(2.5rem, 9vh, 6.5rem);
+}
+
+.oracle-chat--guest .ink-card {
+  width: min(880px, calc(100vw - 2rem));
+  margin: 0 auto;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+.oracle-chat--guest .ink-card__header {
+  display: none;
+}
+
+.oracle-guest {
+  display: grid;
+  gap: 14px;
+}
+
+.oracle-guest__intro {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  text-align: center;
+}
+
+.oracle-guest__title {
+  margin: 0;
+  color: #111827;
+  font-size: clamp(34px, 4vw, 52px);
+  font-weight: 560;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+}
+
+.oracle-guest__desc {
+  margin: 8px auto 0;
+  max-width: 700px;
+  color: rgba(15, 23, 42, 0.58);
+  font-size: 15px;
+}
+
+.oracle-chat__composer--guest {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 12px 36px rgba(15, 23, 42, 0.08);
+  padding: 18px 20px 14px;
+}
+
+.oracle-chat__field--guest {
+  gap: 8px;
+}
+
+.oracle-chat__field--guest .field__label {
+  display: none;
+}
+
+.oracle-chat--guest .oracle-chat__textarea {
+  min-height: 92px;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  padding: 8px 6px;
+  box-shadow: none;
+}
+
+.oracle-chat--guest .oracle-chat__textarea:hover {
+  background: rgba(255, 255, 255, 0.42);
+  border: 0;
+}
+
+.oracle-chat--guest .oracle-chat__textarea:focus {
+  border: 0;
+  background: rgba(255, 255, 255, 0.6);
+  box-shadow: none;
+}
+
+.oracle-guest__prompt-row {
+  margin-top: 2px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.oracle-chat--guest .oracle-turn__follow-chip {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(15, 23, 42, 0.08);
+  color: rgba(15, 23, 42, 0.76);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+}
+
+.oracle-chat--guest .oracle-turn__follow-chip:hover {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.14);
+}
+
+.actions-row--guest {
+  justify-content: flex-end;
+  margin-top: 2px;
+}
+
+.oracle-chat--guest .oracle-guest__submit {
+  min-height: 44px;
+  height: 44px;
+  border-radius: 999px;
+  padding: 0 20px;
+  background: #ffffff;
+  color: #1f2937;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+}
+
+.oracle-chat--guest .oracle-guest__submit:hover:not(:disabled) {
+  background: #f8fafc;
+}
+
+.oracle-guest__result {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+  padding: 14px;
+}
+
+@media (max-width: 56.25rem) {
+  .oracle-chat--guest {
+    padding-top: 2rem;
+  }
+
+  .oracle-chat__composer--guest {
+    border-radius: 22px;
+    padding: 14px 14px 12px;
+  }
+
+  .oracle-guest__title {
+    font-size: clamp(28px, 7vw, 36px);
+  }
+}
+
+/* =========================================================
+   Auth modal + top-right auth trigger
+   ========================================================= */
+.top-nav__auth-cta {
+  min-height: 2.25rem;
+  height: 2.25rem;
+  padding: 0 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: rgba(255, 255, 255, 0.92);
+  color: rgba(15, 23, 42, 0.9);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+}
+
+.top-nav__auth-cta:hover:not(:disabled) {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.18);
+}
+
+.auth-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 260;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.34);
+  backdrop-filter: blur(2px);
+}
+
+.auth-modal {
+  width: min(34rem, calc(100vw - 2rem));
+  border-radius: 1rem;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: #ffffff;
+  box-shadow: none;
+  padding: 1rem;
+  color: #0f172a;
+}
+
+.auth-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 0.375rem;
+}
+
+.auth-modal__title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 650;
+  color: #0f172a;
+}
+
+.auth-modal__subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.8125rem;
+  color: rgba(15, 23, 42, 0.58);
+}
+
+.auth-modal__close {
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 999px;
+  background: #ffffff;
+  color: rgba(15, 23, 42, 0.72);
+  font-size: 1.125rem;
+  cursor: pointer;
+}
+
+.auth-modal__close:hover {
+  background: #f8fafc;
+}
+
+.auth-modal__tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 0.875rem;
+}
+
+.auth-modal__tab {
+  min-height: 2.25rem;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 0.75rem;
+  background: #f8fafc;
+  color: rgba(15, 23, 42, 0.74);
+  font-size: 0.875rem;
+  font-weight: 620;
+  cursor: pointer;
+}
+
+.auth-modal__tab--active {
+  background: rgba(178, 58, 47, 0.1);
+  border-color: rgba(178, 58, 47, 0.28);
+  color: #8d3026;
+}
+
+.auth-modal .field {
+  gap: 0.35rem;
+}
+
+.auth-modal .field__label {
+  color: #334155;
+  font-size: 0.8125rem;
+}
+
+.auth-modal input {
+  width: 100%;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 0.75rem;
+  background: #fbfbfc;
+  color: #0f172a;
+  padding: 0.6875rem 0.75rem;
+  box-shadow: none;
+}
+
+.auth-modal input::placeholder {
+  color: rgba(15, 23, 42, 0.4);
+}
+
+.auth-modal input:hover {
+  border-color: rgba(15, 23, 42, 0.2);
+}
+
+.auth-modal input:focus {
+  outline: none;
+  border-color: rgba(178, 58, 47, 0.45);
+  box-shadow: none;
+  background: #ffffff;
+}
+
+.auth-modal__actions {
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.auth-modal__actions .ink-button {
+  min-width: 7.5rem;
+  flex: 1;
+}
+
+.auth-modal__cancel-btn {
+  background: #ffffff !important;
+  border: 1px solid #667eea !important;
+  color: #667eea !important;
+}
+
+.auth-modal__cancel-btn:hover:not(:disabled) {
+  background: #f0f4ff !important;
+  border-color: #5a72e2 !important;
+}
+
+/* 减少输入框选中时的阴影效果 */
+.auth-modal input:focus {
+  outline: none;
+  border-color: rgba(178, 58, 47, 0.45);
+  box-shadow: 0 0 0 0.125rem rgba(178, 58, 47, 0.12);
+  background: #ffffff;
+}
+
+.auth-modal__code-row {
+  margin-top: 0.25rem;
+}
+
+@media (max-width: 56.25rem) {
+  .top-nav__auth-cta {
+    min-height: 2.125rem;
+    height: 2.125rem;
+    padding: 0 0.75rem;
+    font-size: 0.75rem;
+  }
+
+  .auth-modal {
+    padding: 0.875rem;
+  }
+}
+
+/* =========================================================
+   Pastel refresh: pink-blue gradient + button system
+   ========================================================= */
+:root {
+  --pastel-bg-start: #f8f0ff;
+  --pastel-bg-mid: #f5f4ff;
+  --pastel-bg-end: #e9f4ff;
+  --pastel-primary: #667eea;
+  --pastel-primary-hover: #5a72e2;
+  --pastel-primary-soft: rgba(102, 126, 234, 0.16);
+  --pastel-pink-soft: rgba(241, 162, 192, 0.18);
+}
+
+body {
+  background: linear-gradient(
+    180deg,
+    var(--pastel-bg-start) 0%,
+    var(--pastel-bg-mid) 48%,
+    var(--pastel-bg-end) 100%
+  );
+}
+
+.top-nav {
+  background: rgba(255, 255, 255, 0.72);
+  border-bottom: 1px solid rgba(102, 126, 234, 0.12);
+}
+
+.top-nav__auth-cta {
+  border-color: rgba(102, 126, 234, 0.22);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(239, 245, 255, 0.96));
+  color: #3852ba;
+  box-shadow: 0 8px 18px rgba(102, 126, 234, 0.18);
+}
+
+.top-nav__auth-cta:hover:not(:disabled) {
+  border-color: rgba(102, 126, 234, 0.34);
+  background: linear-gradient(135deg, #ffffff, #edf4ff);
+}
+
+.oracle-chat--guest .oracle-chat__composer--guest {
+  border-color: rgba(102, 126, 234, 0.12);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(251, 248, 255, 0.84)),
+    linear-gradient(135deg, var(--pastel-pink-soft), rgba(160, 194, 255, 0.12));
+  box-shadow: 0 14px 36px rgba(102, 126, 234, 0.14);
+}
+
+.oracle-chat--guest .oracle-chat__textarea:focus {
+  box-shadow: 0 0 0 4px var(--pastel-primary-soft);
+}
+
+.oracle-chat--guest .oracle-turn__follow-chip {
+  border-color: rgba(102, 126, 234, 0.16);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(241, 246, 255, 0.92));
+  color: rgba(44, 60, 120, 0.88);
+  box-shadow: 0 6px 14px rgba(102, 126, 234, 0.1);
+}
+
+.oracle-chat--guest .oracle-turn__follow-chip:hover {
+  border-color: rgba(102, 126, 234, 0.3);
+  background: linear-gradient(135deg, #ffffff, #ecf3ff);
+}
+
+.oracle-chat--guest .oracle-guest__submit,
+.auth-modal__actions .ink-button {
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  background: linear-gradient(135deg, #6c83ee 0%, #67a0f3 100%);
+  color: #ffffff;
+  box-shadow: 0 10px 22px rgba(102, 126, 234, 0.25);
+}
+
+.oracle-chat--guest .oracle-guest__submit:hover:not(:disabled),
+.auth-modal__actions .ink-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #5f79ea 0%, #5d97ef 100%);
+}
+
+.auth-modal {
+  border-color: rgba(102, 126, 234, 0.16);
+  background: linear-gradient(180deg, #ffffff 0%, #f9f7ff 100%);
+}
+
+.auth-modal__tab {
+  border-color: rgba(102, 126, 234, 0.14);
+  background: rgba(255, 255, 255, 0.78);
+  color: rgba(61, 74, 138, 0.78);
+}
+
+.auth-modal__tab--active {
+  border-color: rgba(102, 126, 234, 0.36);
+  background: linear-gradient(135deg, rgba(237, 233, 255, 0.92), rgba(233, 243, 255, 0.92));
+  color: #3852ba;
+}
+
+.auth-modal input:focus {
+  border-color: rgba(102, 126, 234, 0.45);
+  box-shadow: 0 0 0 0.25rem var(--pastel-primary-soft);
+}
+
+/* Shell bars: match pastel background */
+.top-nav {
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.82) 0%,
+      rgba(248, 245, 255, 0.78) 48%,
+      rgba(238, 246, 255, 0.78) 100%
+    );
+  border-bottom: 1px solid rgba(134, 154, 234, 0.18);
+  box-shadow: 0 6px 16px rgba(104, 122, 196, 0.08);
+}
+
+.app-footer {
+  border-top: 1px solid rgba(134, 154, 234, 0.16);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(250, 245, 255, 0.78) 0%,
+      rgba(239, 246, 255, 0.74) 100%
+    );
+  color: rgba(70, 83, 138, 0.7);
+}
+
+/* Auth modal layout tuning */
+.auth-modal__shell {
+  position: relative;
+  width: min(34rem, calc(100vw - 2rem));
+  overflow: visible;
+}
+
+
+
+.auth-modal__input-with-action {
+  position: relative;
+}
+
+.auth-modal__input-with-action input {
+  padding-right: 7.4rem;
+}
+
+.auth-modal__inline-send {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  min-height: 2rem;
+  height: 2rem;
+  padding: 0 0.65rem;
+  border-radius: 0.625rem;
+  border: 1px solid rgba(102, 126, 234, 0.24);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(236, 244, 255, 0.92));
+  color: #3f58bf;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.14);
+  font-size: 0.75rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.auth-modal__inline-send:hover:not(:disabled) {
+  border-color: rgba(102, 126, 234, 0.38);
+  background: linear-gradient(135deg, #ffffff, #eaf2ff);
+}
+
+@media (max-width: 56.25rem) {
+  .auth-modal__shell {
+    width: min(34rem, calc(100vw - 1rem));
+  }
+
+  .auth-modal__close--outside {
+    top: -0.625rem;
+    right: -0.375rem;
+    width: 2.25rem;
+    height: 2.125rem;
+  }
+
+  .auth-modal__input-with-action input {
+    padding-right: 6.8rem;
+  }
+
+  .auth-modal__inline-send {
+    right: 0.4rem;
+    min-height: 1.9rem;
+    height: 1.9rem;
+    padding: 0 0.55rem;
+    font-size: 0.72rem;
   }
 }

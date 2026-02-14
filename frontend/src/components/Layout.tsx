@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
+import { OPEN_AUTH_MODAL_EVENT } from "../constants/events";
 import type { UserProfile } from "../types";
+import { AuthModal } from "./AuthModal";
 import { InkButton } from "./InkButton";
 import { ZiweiBackground } from "./ZiweiBackground";
 
@@ -9,15 +11,20 @@ interface LayoutProps {
   user: UserProfile | null;
   authReady: boolean;
   onLogout: () => Promise<void> | void;
+  onAuthSuccess?: (user: UserProfile) => void;
 }
 
-export function Layout({ user, authReady, onLogout }: LayoutProps) {
+export function Layout({ user, authReady, onLogout, onAuthSuccess }: LayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const isHome = location.pathname === "/oracle";
+  const isAdminEntry = location.pathname.startsWith("/admin");
+  const isAuthPage = location.pathname === "/login" || location.pathname === "/register" || location.pathname === "/forgot-password";
+  const showGuestAuthButton = !user && !isAdminEntry && !isAuthPage;
 
   const [activeConstellationIndex, setActiveConstellationIndex] = useState(0);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   useEffect(() => {
     if (!isHome) {
@@ -27,6 +34,24 @@ export function Layout({ user, authReady, onLogout }: LayoutProps) {
     // Keep background static in chat page to reduce visual fatigue.
     setActiveConstellationIndex(0);
   }, [isHome]);
+
+  useEffect(() => {
+    if (user) {
+      setAuthModalOpen(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const handleOpenAuthModal = () => {
+      if (!user) {
+        setAuthModalOpen(true);
+      }
+    };
+    window.addEventListener(OPEN_AUTH_MODAL_EVENT, handleOpenAuthModal);
+    return () => {
+      window.removeEventListener(OPEN_AUTH_MODAL_EVENT, handleOpenAuthModal);
+    };
+  }, [user]);
 
   const handleLogoutClick = async () => {
     if (isLoggingOut) {
@@ -80,16 +105,7 @@ export function Layout({ user, authReady, onLogout }: LayoutProps) {
                 </NavLink>
               ) : null}
             </>
-          ) : (
-            <>
-              <NavLink to="/login" className={({ isActive }) => isActive ? "active" : ""}>
-                用户登录
-              </NavLink>
-              <NavLink to="/register" className={({ isActive }) => isActive ? "active" : ""}>
-                邮箱注册
-              </NavLink>
-            </>
-          )}
+          ) : null}
         </nav>
         <div className="top-nav__auth">
           {!authReady ? <span className="top-nav__hint">校验中</span> : null}
@@ -100,6 +116,17 @@ export function Layout({ user, authReady, onLogout }: LayoutProps) {
                 {isLoggingOut ? "退出中..." : "退出"}
               </InkButton>
             </>
+          ) : showGuestAuthButton ? (
+            <InkButton
+              type="button"
+              kind="ghost"
+              className="top-nav__auth-cta"
+              onClick={() => {
+                setAuthModalOpen(true);
+              }}
+            >
+              登录/注册
+            </InkButton>
           ) : null}
         </div>
       </header>
@@ -111,6 +138,14 @@ export function Layout({ user, authReady, onLogout }: LayoutProps) {
       <footer className="app-footer">
         天衍 Oracle · 东方命理咨询与行动建议
       </footer>
+
+      <AuthModal
+        open={authModalOpen}
+        onClose={() => {
+          setAuthModalOpen(false);
+        }}
+        onAuthSuccess={onAuthSuccess}
+      />
     </div>
   );
 }
