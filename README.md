@@ -256,3 +256,4 @@ MIT
 // final test
 // compliant commit test
 // final compliant test
+// invalid commit test
