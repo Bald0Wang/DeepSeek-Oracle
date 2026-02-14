@@ -187,13 +187,13 @@ docker compose --env-file .env.docker down
 
 ### 公网服务器部署（80 端口）
 
-如果你要直接对外提供 `http://14.103.128.59/`，可使用仓库新增文件 `docker-compose.public.yml`。
+如果你要直接对外提供公网IP，可使用仓库新增文件 `docker-compose.public.yml`。
 
 特点：
 
 - 仅开放前端 `80` 端口
 - `backend` 与 `redis` 不直接暴露到公网
-- `CORS_ORIGINS` 默认值改为 `http://14.103.128.59`
+- `CORS_ORIGINS` 默认值改为 公网IP
 
 启动：
 
