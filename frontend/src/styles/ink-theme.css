@@ -462,6 +462,10 @@ select {
   width: min(34rem, 100%);
 }
 
+.auth-page .ink-card__content {
+  gap: 0.875rem;
+}
+
 .auth-page input:focus,
 .auth-page input:focus-visible {
   border-color: rgba(206, 166, 109, 0.78);
@@ -2383,6 +2387,48 @@ summary:focus-visible {
     letter-spacing: 0.05em;
   }
 
+  .auth-page {
+    min-height: calc(100vh - 9.5rem);
+    align-content: start;
+    padding: 0.625rem 0 1.25rem;
+  }
+
+  .auth-page .ink-card {
+    width: 100%;
+  }
+
+  .auth-page .ink-card__header {
+    margin-bottom: 0.75rem;
+  }
+
+  .auth-page .ink-card__title {
+    font-size: 1.2rem;
+  }
+
+  .auth-page .stack {
+    gap: 0.75rem;
+  }
+
+  .auth-page input,
+  .auth-page select {
+    min-height: 2.875rem;
+    font-size: 1rem;
+    padding: 0.75rem 0.8125rem;
+  }
+
+  .auth-page .actions-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .auth-page .actions-row > .ink-button,
+  .auth-page .actions-row > a,
+  .auth-page .actions-row > a .ink-button {
+    width: 100%;
+  }
+
   .ink-card {
     border-radius: var(--radius-md);
     padding: 1.125rem;
@@ -2539,6 +2585,19 @@ summary:focus-visible {
 
 .analysis-card__actions a .ink-button {
     width: 100%;
+  }
+
+  .auth-page {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .auth-page .ink-card {
+    padding: 0.9375rem;
+    border-radius: 0.875rem;
+  }
+
+  .auth-page .field__label {
+    font-size: 0.78rem;
   }
 }
 
@@ -3802,4 +3861,39 @@ body::after {
 
 .insights-page .kline-item__meta {
   color: #746057;
+}
+
+/* Natural document flow: remove component-level scrolling */
+.oracle-chat__workspace {
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+.oracle-chat__main {
+  grid-template-rows: auto auto !important;
+}
+
+.oracle-chat__thread,
+.oracle-chat__composer,
+.oracle-history__list,
+.oracle-inspector__content,
+.pre-wrap {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.oracle-chat__thread {
+  min-height: 0 !important;
+}
+
+.oracle-chat__textarea {
+  max-height: none !important;
+}
+
+@media (max-width: 56.25rem) {
+  .oracle-history__list {
+    grid-auto-flow: row !important;
+    grid-auto-columns: auto !important;
+    overflow: visible !important;
+  }
 }
