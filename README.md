@@ -165,7 +165,7 @@ cp .env.docker.example .env.docker
 - `IZTHON_SRC_PATH_HOST`：本地 `izthon/src` 路径（紫微计算依赖，默认 `../izthon/src`）
 - `FRONTEND_PORT`：前端端口，默认 `8080`
 - `BACKEND_PORT`：后端端口，默认 `5000`
-- `LLM_PROVIDER`：默认 `volcano`（Ark）
+- `LLM_PROVIDER`：默认 `glm`（智谱 GLM）
 
 2) 启动服务
 

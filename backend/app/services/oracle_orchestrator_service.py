@@ -165,6 +165,7 @@ class OracleOrchestratorService:
     ) -> dict[str, Any]:
         provider_name = payload.get("provider", self.default_provider)
         model_name = payload.get("model", self.default_model)
+        provider_config = self._resolve_provider_config(payload)
         self._emit_event(event_callback, "session_start", {"provider": provider_name, "model": model_name})
 
         try:
@@ -172,6 +173,7 @@ class OracleOrchestratorService:
                 payload=payload,
                 provider_name=provider_name,
                 model_name=model_name,
+                provider_config=provider_config,
                 event_callback=event_callback,
             )
         except (UnsupportedToolCallingError, AppError, RuntimeError) as exc:
@@ -180,6 +182,7 @@ class OracleOrchestratorService:
                 payload=payload,
                 provider_name=provider_name,
                 model_name=model_name,
+                provider_config=provider_config,
                 event_callback=event_callback,
                 fallback_reason=fallback_reason,
             )
@@ -188,6 +191,7 @@ class OracleOrchestratorService:
                 payload=payload,
                 provider_name=provider_name,
                 model_name=model_name,
+                provider_config=provider_config,
                 event_callback=event_callback,
                 fallback_reason=str(exc),
             )
@@ -218,6 +222,7 @@ class OracleOrchestratorService:
         payload: dict[str, Any],
         provider_name: str,
         model_name: str,
+        provider_config: dict[str, Any] | None,
         event_callback: Callable[[str, dict[str, Any]], None] | None,
     ) -> dict[str, Any]:
         user_query = payload["user_query"]
@@ -243,7 +248,7 @@ class OracleOrchestratorService:
             refusal["tool_events"] = tool_events
             return refusal
 
-        provider = create_provider(provider_name, model_name)
+        provider = create_provider(provider_name, model_name, app_config=provider_config)
         allowed_specs = self._build_enabled_tool_specs(enabled_schools)
         allowed_tool_names = {spec.name for spec in allowed_specs}
         messages = self._build_orchestrator_messages(
@@ -417,9 +422,11 @@ class OracleOrchestratorService:
         payload: dict[str, Any],
         provider_name: str,
         model_name: str,
+        provider_config: dict[str, Any] | None,
         event_callback: Callable[[str, dict[str, Any]], None] | None,
         fallback_reason: str,
     ) -> dict[str, Any]:
+        _ = provider_config
         user_query = payload["user_query"]
         selected_school = payload.get("selected_school", "east")
         enabled_schools = self._normalize_enabled_schools(payload.get("enabled_schools"))
@@ -1022,6 +1029,13 @@ class OracleOrchestratorService:
             normalized.append("actionizer")
         return normalized
 
+    @staticmethod
+    def _resolve_provider_config(payload: dict[str, Any]) -> dict[str, Any] | None:
+        candidate = payload.get("provider_config")
+        if isinstance(candidate, dict):
+            return candidate
+        return None
+
     # ------------------------------------------------------------------
     # 意图路由
     # ------------------------------------------------------------------
@@ -1195,6 +1209,7 @@ class OracleOrchestratorService:
             temperature_safe=True,
             provider_name=provider_name,
             model_name=model_name,
+            provider_config=self._resolve_provider_config(payload),
         )
 
     def _run_meihua_agent(self, payload: dict[str, Any], provider_name: str, model_name: str) -> str:
@@ -1263,6 +1278,7 @@ class OracleOrchestratorService:
             temperature_safe=True,
             provider_name=provider_name,
             model_name=model_name,
+            provider_config=self._resolve_provider_config(payload),
         )
 
     def _run_tarot_agent(self, payload: dict[str, Any], provider_name: str, model_name: str) -> str:
@@ -1311,6 +1327,7 @@ class OracleOrchestratorService:
             temperature_safe=True,
             provider_name=provider_name,
             model_name=model_name,
+            provider_config=self._resolve_provider_config(payload),
         )
 
     def _run_daily_card_agent(self, payload: dict[str, Any], provider_name: str, model_name: str) -> str:
@@ -1364,6 +1381,7 @@ class OracleOrchestratorService:
             temperature_safe=True,
             provider_name=provider_name,
             model_name=model_name,
+            provider_config=self._resolve_provider_config(payload),
         )
 
     def _run_philosophy_agent(self, payload: dict[str, Any], provider_name: str, model_name: str) -> str:
@@ -1425,6 +1443,7 @@ class OracleOrchestratorService:
             temperature_safe=True,
             provider_name=provider_name,
             model_name=model_name,
+            provider_config=self._resolve_provider_config(payload),
         )
 
     def _run_actionizer_agent(
@@ -1480,6 +1499,7 @@ class OracleOrchestratorService:
             temperature_safe=True,
             provider_name=provider_name,
             model_name=model_name,
+            provider_config=self._resolve_provider_config(payload),
         )
 
     # ------------------------------------------------------------------
@@ -1493,6 +1513,7 @@ class OracleOrchestratorService:
         temperature_safe: bool,
         provider_name: str,
         model_name: str,
+        provider_config: dict[str, Any] | None = None,
     ) -> str:
         """调用 LLM 生成回答，失败时返回 fallback 文本。"""
         if provider_name == "mock":
@@ -1501,10 +1522,14 @@ class OracleOrchestratorService:
         response_text = ""
         for attempt in range(self.llm_max_retries + 1):
             try:
-                provider = create_provider(provider_name, model_name)
+                provider = create_provider(provider_name, model_name, app_config=provider_config)
                 response = provider.generate(prompt, timeout_s=self.request_timeout_s)
                 response_text = (response.content or "").strip()
                 if response_text:
+                    finish_reason = str(response.finish_reason or "").strip().lower()
+                    if finish_reason in {"length", "abort"} and attempt < self.llm_max_retries:
+                        time.sleep(2**attempt)
+                        continue
                     break
             except AppError:
                 if attempt < self.llm_max_retries:

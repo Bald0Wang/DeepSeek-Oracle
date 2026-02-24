@@ -7,6 +7,7 @@ from typing import Any
 from flask import current_app
 
 from app.models import ResultRepo, TaskRepo
+from app.services.llm_settings_service import get_llm_settings_service
 from app.services.llm_service import LLMService
 from app.services.ziwei_service import ZiweiService
 from app.utils.errors import AppError, business_error
@@ -272,22 +273,23 @@ class AnalysisService:
 
             self._raise_if_cancelled(task_id)
             self.task_repo.mark_progress(task_id, step="llm_batch", progress=80)
+            owner_user_id_raw = task.get("user_id")
+            owner_user_id = int(owner_user_id_raw) if owner_user_id_raw is not None else 0
+            runtime = get_llm_settings_service().resolve_runtime_config(
+                user_id=owner_user_id,
+                provider_override=task.get("provider"),
+                model_override=task.get("model"),
+            )
+            runtime_provider = str(runtime["provider"])
+            runtime_model = str(runtime["model"])
+            runtime_provider_config = runtime.get("provider_config")
+            if not isinstance(runtime_provider_config, dict):
+                runtime_provider_config = {}
 
             llm_service = LLMService(
-                provider_name=task["provider"],
-                model=task["model"],
-                provider_config={
-                    "LLM_MODEL": current_app.config.get("LLM_MODEL", ""),
-                    "VOLCANO_API_KEY": current_app.config.get("VOLCANO_API_KEY", ""),
-                    "VOLCANO_MODEL": current_app.config.get("VOLCANO_MODEL", ""),
-                    "ALIYUN_API_KEY": current_app.config.get("ALIYUN_API_KEY", ""),
-                    "ALIYUN_BASE_URL": current_app.config.get("ALIYUN_BASE_URL", ""),
-                    "DEEPSEEK_API_KEY": current_app.config.get("DEEPSEEK_API_KEY", ""),
-                    "DEEPSEEK_BASE_URL": current_app.config.get("DEEPSEEK_BASE_URL", ""),
-                    "ZHIPU_API_KEY": current_app.config.get("ZHIPU_API_KEY", ""),
-                    "QWEN_API_KEY": current_app.config.get("QWEN_API_KEY", ""),
-                    "QWEN_BASE_URL": current_app.config.get("QWEN_BASE_URL", ""),
-                },
+                provider_name=runtime_provider,
+                model=runtime_model,
+                provider_config=runtime_provider_config,
                 timeout_s=self.request_timeout_s,
                 max_retries=self.llm_max_retries,
             )
@@ -303,16 +305,14 @@ class AnalysisService:
 
             self._raise_if_cancelled(task_id)
             self.task_repo.mark_progress(task_id, step="persist_result", progress=95)
-            owner_user_id = task.get("user_id")
-            owner_user_id = int(owner_user_id) if owner_user_id is not None else 0
 
             result_id = self.result_repo.save_result(
                 cache_key=task["cache_key"],
                 user_id=owner_user_id,
                 birth_info=birth_info,
                 text_description=text_description,
-                provider=task["provider"],
-                model=task["model"],
+                provider=runtime_provider,
+                model=runtime_model,
                 prompt_version=task["prompt_version"],
                 analysis=llm_output["analysis"],
                 total_execution_time=llm_output["total_execution_time"],

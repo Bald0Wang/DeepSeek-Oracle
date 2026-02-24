@@ -4,6 +4,7 @@ from .auth_service import AuthService, get_auth_service
 from .divination_service import DivinationService, get_divination_service
 from .email_service import EmailService, get_email_service
 from .insight_service import InsightService, get_insight_service
+from .llm_settings_service import LLMSettingsService, get_llm_settings_service
 from .oracle_orchestrator_service import OracleOrchestratorService, get_oracle_orchestrator_service
 
 __all__ = [
@@ -13,6 +14,7 @@ __all__ = [
     "DivinationService",
     "EmailService",
     "InsightService",
+    "LLMSettingsService",
     "OracleOrchestratorService",
     "get_admin_service",
     "get_analysis_service",
@@ -20,5 +22,6 @@ __all__ = [
     "get_divination_service",
     "get_email_service",
     "get_insight_service",
+    "get_llm_settings_service",
     "get_oracle_orchestrator_service",
 ]

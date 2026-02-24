@@ -4,7 +4,7 @@ Flask-CORS==4.0.0
 python-dotenv==1.0.0
 requests==2.31.0
 openai
-zhipuai
+zai-sdk==0.2.2
 volcengine-python-sdk[ark]
 jieba
 redis

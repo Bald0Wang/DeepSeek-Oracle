@@ -27,6 +27,8 @@ import type {
   SubmitAnalysisData,
   SystemLogResponse,
   TaskData,
+  LLMSettingsData,
+  UpdateLLMSettingsRequest,
   ZiweiDivinationRequest,
   ZiweiDivinationResponse,
 } from "../types";
@@ -353,3 +355,9 @@ export const getAdminLogs = async (page = 1, pageSize = 50) =>
 
 export const getAdminUsers = async (page = 1, pageSize = 20) =>
   unwrap(await api.get<ApiResponse<AdminUserListResponse>>(`/admin/users?page=${page}&page_size=${pageSize}`));
+
+export const getLLMSettings = async () =>
+  unwrap(await api.get<ApiResponse<LLMSettingsData>>("/settings/llm"));
+
+export const updateLLMSettings = async (payload: UpdateLLMSettingsRequest) =>
+  unwrap(await api.put<ApiResponse<{ setting: LLMSettingsData["setting"] }>>("/settings/llm", payload));

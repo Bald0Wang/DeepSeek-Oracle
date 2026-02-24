@@ -4771,3 +4771,91 @@ body {
     font-size: 0.72rem;
   }
 }
+
+/* =========================================================
+   Settings page: user model configuration
+   ========================================================= */
+.settings-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.settings-card {
+  width: min(44rem, 100%);
+}
+
+.settings-mode-toggle {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  padding: 0.25rem;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.84);
+}
+
+.settings-mode-toggle__btn {
+  min-height: 2.25rem;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(15, 23, 42, 0.8);
+  font-size: 0.8125rem;
+  font-weight: 620;
+  cursor: pointer;
+}
+
+.settings-mode-toggle__btn:hover {
+  border-color: rgba(15, 23, 42, 0.14);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.settings-mode-toggle__btn--active {
+  border-color: rgba(157, 43, 29, 0.28);
+  background: rgba(157, 43, 29, 0.1);
+  color: #7a2318;
+}
+
+.settings-model-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.settings-model-chip {
+  min-height: 2rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  background: rgba(255, 255, 255, 0.88);
+  color: rgba(15, 23, 42, 0.78);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.settings-model-chip:hover {
+  border-color: rgba(157, 43, 29, 0.28);
+  background: rgba(157, 43, 29, 0.08);
+}
+
+.settings-model-chip--active {
+  border-color: rgba(157, 43, 29, 0.3);
+  background: rgba(157, 43, 29, 0.14);
+  color: #6a1f16;
+  font-weight: 620;
+}
+
+@media (max-width: 56.25rem) {
+  .settings-card {
+    width: 100%;
+  }
+
+  .settings-mode-toggle {
+    width: 100%;
+  }
+
+  .settings-mode-toggle__btn {
+    flex: 1;
+  }
+}

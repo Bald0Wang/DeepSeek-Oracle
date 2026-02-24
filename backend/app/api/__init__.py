@@ -8,6 +8,7 @@ from .export import export_bp
 from .history import history_bp
 from .insights import insights_bp
 from .oracle import oracle_bp
+from .settings import settings_bp
 from .task import task_bp
 
 
@@ -21,3 +22,4 @@ def register_blueprints(app: Flask) -> None:
     app.register_blueprint(export_bp, url_prefix="/api")
     app.register_blueprint(insights_bp, url_prefix="/api")
     app.register_blueprint(oracle_bp, url_prefix="/api")
+    app.register_blueprint(settings_bp, url_prefix="/api")

@@ -244,6 +244,42 @@ export interface AuthMeData {
   user: UserProfile;
 }
 
+export type LLMMode = "system" | "custom";
+export type LLMProvider = "glm" | "volcano" | "deepseek" | "qwen" | "aliyun";
+
+export interface LLMProviderOption {
+  provider: LLMProvider;
+  label: string;
+  system_models: string[];
+  supports_base_url: boolean;
+}
+
+export interface LLMSetting {
+  mode: LLMMode;
+  provider: LLMProvider;
+  model: string;
+  base_url?: string | null;
+  has_api_key: boolean;
+  updated_at?: string | null;
+}
+
+export interface LLMSettingsData {
+  defaults: {
+    provider: LLMProvider;
+    model: string;
+  };
+  provider_options: LLMProviderOption[];
+  setting: LLMSetting;
+}
+
+export interface UpdateLLMSettingsRequest {
+  mode: LLMMode;
+  provider: LLMProvider;
+  model: string;
+  api_key?: string;
+  base_url?: string;
+}
+
 export interface Pagination {
   page: number;
   page_size: number;

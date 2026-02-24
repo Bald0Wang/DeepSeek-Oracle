@@ -10,6 +10,7 @@ from .auth import (
     validate_send_register_code_payload,
 )
 from .oracle_chat import validate_oracle_chat_payload
+from .settings import validate_update_llm_settings_payload
 
 __all__ = [
     "validate_analyze_payload",
@@ -23,4 +24,5 @@ __all__ = [
     "validate_login_payload",
     "validate_forgot_password_payload",
     "validate_reset_password_payload",
+    "validate_update_llm_settings_payload",
 ]

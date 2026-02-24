@@ -18,6 +18,7 @@ import MeihuaFortunePage from "./pages/MeihuaFortune";
 import OracleChatPage from "./pages/OracleChat";
 import RegisterPage from "./pages/Register";
 import ResultPage from "./pages/Result";
+import SettingsPage from "./pages/Settings";
 import ZiweiFortunePage from "./pages/ZiweiFortune";
 
 interface GuardProps {
@@ -170,6 +171,7 @@ export default function App() {
             <Route path="/history" element={<HistoryPage />} />
             <Route path="/history/divination/:id" element={<DivinationRecordPage />} />
             <Route path="/insights" element={<InsightsPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
           </Route>
 
           <Route element={<RequireAdmin authReady={authReady} user={activeUser} />}>

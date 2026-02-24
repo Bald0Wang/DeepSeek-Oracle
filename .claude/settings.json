@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//d/files/WeChat Files/wxid_176josid573812/**)",
+      "Read(//d/files/WeChat Files/wxid_ersziboq3bvf22/**)",
+      "Bash(du:*)",
+      "Read(//d/files/928608467/**)"
+    ]
+  }
+}

@@ -9,6 +9,7 @@ from flask import Blueprint, Response, current_app, g, request, stream_with_cont
 from app.models import OracleChatRepo
 from app.schemas import validate_oracle_chat_payload
 from app.services import get_oracle_orchestrator_service
+from app.services.llm_settings_service import get_llm_settings_service
 from app.utils.errors import business_error
 from app.utils.auth import require_auth, resolve_request_user
 from app.utils.response import success_response
@@ -79,6 +80,14 @@ def oracle_chat():
         normalized.pop("conversation_id", None)
         data = get_oracle_orchestrator_service().chat(normalized)
         return success_response(data=data)
+    runtime = get_llm_settings_service().resolve_runtime_config(
+        user_id=user_id,
+        provider_override=normalized.get("provider"),
+        model_override=normalized.get("model"),
+    )
+    normalized["provider"] = runtime["provider"]
+    normalized["model"] = runtime["model"]
+    normalized["provider_config"] = runtime["provider_config"]
 
     repo = _get_oracle_chat_repo()
     conversation_id = _resolve_conversation_id(repo=repo, user_id=user_id, normalized=normalized)
@@ -130,6 +139,15 @@ def oracle_chat_stream():
     user_id = _get_current_user_id()
     payload = request.get_json(silent=True) or {}
     normalized = validate_oracle_chat_payload(payload)
+    runtime = get_llm_settings_service().resolve_runtime_config(
+        user_id=user_id,
+        provider_override=normalized.get("provider"),
+        model_override=normalized.get("model"),
+    )
+    normalized["provider"] = runtime["provider"]
+    normalized["model"] = runtime["model"]
+    normalized["provider_config"] = runtime["provider_config"]
+
     repo = _get_oracle_chat_repo()
     conversation_id = _resolve_conversation_id(repo=repo, user_id=user_id, normalized=normalized)
     normalized["conversation_id"] = conversation_id

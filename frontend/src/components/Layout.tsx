@@ -93,6 +93,9 @@ export function Layout({ user, authReady, onLogout, onAuthSuccess }: LayoutProps
               <NavLink to="/insights" className={({ isActive }) => isActive ? "active" : ""}>
                 人生线/日历
               </NavLink>
+              <NavLink to="/settings" className={({ isActive }) => isActive ? "active" : ""}>
+                模型设置
+              </NavLink>
               <NavLink to="/ziwei" className={({ isActive }) => isActive ? "active" : ""}>
                 紫微求签
               </NavLink>

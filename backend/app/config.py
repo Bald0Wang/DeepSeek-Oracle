@@ -51,8 +51,8 @@ class Config:
     SMTP_FROM_NAME = os.getenv("SMTP_FROM_NAME", "DeepSeek Oracle")
     SMTP_TIMEOUT_S = int(os.getenv("SMTP_TIMEOUT_S", "20"))
 
-    LLM_PROVIDER = os.getenv("LLM_PROVIDER", "volcano")
-    LLM_MODEL = os.getenv("LLM_MODEL", "doubao-seed-1-8-251228")
+    LLM_PROVIDER = os.getenv("LLM_PROVIDER", "glm")
+    LLM_MODEL = os.getenv("LLM_MODEL", "glm-5")
     PROMPT_VERSION = os.getenv("PROMPT_VERSION", "v1")
 
     VOLCANO_API_KEY = os.getenv("ARK_API_KEY", "")

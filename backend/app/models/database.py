@@ -187,6 +187,21 @@ ON divination_records(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_divination_records_user_type_created
 ON divination_records(user_id, divination_type, created_at DESC);
 
+CREATE TABLE IF NOT EXISTS user_llm_settings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL UNIQUE,
+  mode TEXT NOT NULL DEFAULT 'system',
+  provider TEXT NOT NULL,
+  model TEXT NOT NULL,
+  api_key TEXT,
+  base_url TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_llm_settings_user
+ON user_llm_settings(user_id);
+
 CREATE TABLE IF NOT EXISTS scheduler_runs (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   job_name TEXT NOT NULL,
@@ -212,6 +227,7 @@ def init_db(database_path: str) -> None:
         _migrate_insight_tables(conn)
         _migrate_oracle_chat_tables(conn)
         _migrate_divination_records_table(conn)
+        _migrate_user_llm_settings_table(conn)
         conn.commit()
 
 
@@ -385,6 +401,44 @@ def _migrate_divination_records_table(conn: sqlite3.Connection) -> None:
         """
         CREATE INDEX IF NOT EXISTS idx_divination_records_user_type_created
         ON divination_records(user_id, divination_type, created_at DESC)
+        """
+    )
+
+
+def _migrate_user_llm_settings_table(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS user_llm_settings (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER NOT NULL UNIQUE,
+          mode TEXT NOT NULL DEFAULT 'system',
+          provider TEXT NOT NULL,
+          model TEXT NOT NULL,
+          api_key TEXT,
+          base_url TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+    if not _has_column(conn, "user_llm_settings", "mode"):
+        conn.execute("ALTER TABLE user_llm_settings ADD COLUMN mode TEXT NOT NULL DEFAULT 'system'")
+    if not _has_column(conn, "user_llm_settings", "provider"):
+        conn.execute("ALTER TABLE user_llm_settings ADD COLUMN provider TEXT NOT NULL DEFAULT 'glm'")
+    if not _has_column(conn, "user_llm_settings", "model"):
+        conn.execute("ALTER TABLE user_llm_settings ADD COLUMN model TEXT NOT NULL DEFAULT 'glm-5'")
+    if not _has_column(conn, "user_llm_settings", "api_key"):
+        conn.execute("ALTER TABLE user_llm_settings ADD COLUMN api_key TEXT")
+    if not _has_column(conn, "user_llm_settings", "base_url"):
+        conn.execute("ALTER TABLE user_llm_settings ADD COLUMN base_url TEXT")
+    if not _has_column(conn, "user_llm_settings", "updated_at"):
+        conn.execute(
+            "ALTER TABLE user_llm_settings ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP"
+        )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_user_llm_settings_user
+        ON user_llm_settings(user_id)
         """
     )
 

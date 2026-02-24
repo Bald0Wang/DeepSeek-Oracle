@@ -6,7 +6,8 @@
       "Bash(git checkout:*)",
       "Bash(git branch:*)",
       "Bash(git config:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(powershell.exe -NoProfile -Command \"\\(Get-ChildItem ''D:\\\\files'' -Recurse -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum\\).Sum / 1GB\")"
     ]
   }
 }

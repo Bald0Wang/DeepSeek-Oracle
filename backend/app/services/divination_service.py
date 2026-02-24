@@ -59,6 +59,7 @@ class DivinationService:
     def run_ziwei(self, payload: dict[str, Any]) -> dict[str, Any]:
         provider_name = payload.get("provider", self.default_provider)
         model_name = payload.get("model", self.default_model)
+        provider_config = payload.get("provider_config") if isinstance(payload.get("provider_config"), dict) else None
         question = payload["question"]
         birth_info = payload["birth_info"]
 
@@ -84,6 +85,7 @@ class DivinationService:
             fallback=fallback,
             provider_name=provider_name,
             model_name=model_name,
+            provider_config=provider_config,
         )
         return {
             "question": question,
@@ -98,6 +100,7 @@ class DivinationService:
     def run_meihua(self, payload: dict[str, Any]) -> dict[str, Any]:
         provider_name = payload.get("provider", self.default_provider)
         model_name = payload.get("model", self.default_model)
+        provider_config = payload.get("provider_config") if isinstance(payload.get("provider_config"), dict) else None
         topic = payload["topic"]
         occurred_at = datetime.fromisoformat(payload["occurred_at"])
 
@@ -120,6 +123,7 @@ class DivinationService:
             fallback=fallback,
             provider_name=provider_name,
             model_name=model_name,
+            provider_config=provider_config,
         )
         return {
             "topic": topic,
@@ -177,7 +181,14 @@ class DivinationService:
             raise business_error("A4004", "divination record not found", 404, False)
         return data
 
-    def _complete_with_fallback(self, prompt: str, fallback: str, provider_name: str, model_name: str) -> str:
+    def _complete_with_fallback(
+        self,
+        prompt: str,
+        fallback: str,
+        provider_name: str,
+        model_name: str,
+        provider_config: dict[str, Any] | None = None,
+    ) -> str:
         if provider_name == "mock":
             return fallback
 
@@ -187,11 +198,16 @@ class DivinationService:
                 provider = create_provider(
                     provider_name,
                     model_name,
-                    app_config=self.provider_config,
+                    app_config=provider_config or self.provider_config,
                 )
                 response = provider.generate(prompt, timeout_s=self.request_timeout_s)
                 text = (response.content or "").strip()
                 if text:
+                    finish_reason = str(response.finish_reason or "").strip().lower()
+                    if finish_reason in {"length", "abort"} and attempt < self.llm_max_retries:
+                        # Retry when model response looks cut off to avoid half-section outputs.
+                        time.sleep(2**attempt)
+                        continue
                     return text
             except AppError:
                 if attempt < self.llm_max_retries:

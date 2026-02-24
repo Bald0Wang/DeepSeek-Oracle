@@ -2,6 +2,7 @@ from flask import Blueprint, g, request
 
 from app.schemas import validate_analyze_payload
 from app.services import get_analysis_service
+from app.services.llm_settings_service import get_llm_settings_service
 from app.utils.auth import require_auth
 from app.utils.response import success_response
 
@@ -15,7 +16,15 @@ def submit_analysis():
     payload = request.get_json(silent=True) or {}
     normalized = validate_analyze_payload(payload)
     current_user = getattr(g, "current_user", None) or {}
-    normalized["user_id"] = int(current_user.get("id", 0))
+    user_id = int(current_user.get("id", 0))
+    normalized["user_id"] = user_id
+    runtime = get_llm_settings_service().resolve_runtime_config(
+        user_id=user_id,
+        provider_override=normalized.get("provider"),
+        model_override=normalized.get("model"),
+    )
+    normalized["provider"] = runtime["provider"]
+    normalized["model"] = runtime["model"]
 
     service = get_analysis_service()
     result = service.submit_analysis(normalized)
@@ -49,7 +58,15 @@ def check_cache():
     payload = request.get_json(silent=True) or {}
     normalized = validate_analyze_payload(payload)
     current_user = getattr(g, "current_user", None) or {}
-    normalized["user_id"] = int(current_user.get("id", 0))
+    user_id = int(current_user.get("id", 0))
+    normalized["user_id"] = user_id
+    runtime = get_llm_settings_service().resolve_runtime_config(
+        user_id=user_id,
+        provider_override=normalized.get("provider"),
+        model_override=normalized.get("model"),
+    )
+    normalized["provider"] = runtime["provider"]
+    normalized["model"] = runtime["model"]
 
     service = get_analysis_service()
     data = service.check_cache(normalized)
